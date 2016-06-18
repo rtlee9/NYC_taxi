@@ -2,21 +2,34 @@
 # Sankey - neighborhood to neighborhood (# trips)
 # ****************************************************************************
 
-names(dt) <- c("source", "target", "value", "type")
+library(rCharts)
+library(igraph)
+
+dt_sankey <- taxi_sample[pickup_borough == 'Manhattan' & dropoff_borough == 'Manhattan', .(
+    value = .N
+    #,sum_fare = sum(fare_amount)
+    #,sum_tip = sum(tip_amount)
+), by = .(source = paste(pickup_nhood, "[pickup]"), target = paste(dropoff_nhood, "[dropoff]"))]
+
+dt_sankey_b <- taxi_sample[!is.na(pickup_borough) & !is.na(dropoff_borough), .(
+    value = .N
+    #,sum_fare = sum(fare_amount)
+    #,sum_tip = sum(tip_amount)
+), by = .(source = paste(pickup_borough, "[pickup]"), target = paste(dropoff_borough, "[dropoff]"))]
 
 sankeyPlot <- rCharts$new()
-d3_path <- paste0(data_path, "rCharts_d3_sankey-gh-pages")
+d3_path <- paste0(lib_path, "rCharts_d3_sankey-gh-pages/")
 sankeyPlot$setLib(paste0(d3_path, 'libraries/widgets/d3_sankey'))
 sankeyPlot$setTemplate(paste0(d3_path, script = "layouts/chart.html"))
 
 sankeyPlot$set(
-    data = dt,
+    data = dt_sankey,
     nodeWidth = 10,
     nodePadding = 5,
     layout = 32,
     width = 1300,
     height = 800,
-    units = "$MM",
+    units = "trips",
     title = "Sankey Diagram"
 )
 
@@ -41,6 +54,7 @@ sankeyPlot$setTemplate(
     </script>
     ")
 sankeyPlot
+
 sankeyPlot$save(paste0(file, ".html"), cdn = TRUE)
 
 

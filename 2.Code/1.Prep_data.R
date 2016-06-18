@@ -3,38 +3,43 @@
 # ****************************************************************************
 
 # Set wd and install libraries
-library(RSocrata)
-library(data.table)
-library(scales)
-library(lubridate)
-library(ggmap)
-library(maptools)
-library(rCharts)
-library(scales)
+library(RSocrata, quietly = T)
+library(data.table, quietly = T)
+library(scales, quietly = T)
+library(lubridate, quietly = T)
+library(ggmap, quietly = T)
+library(maptools, quietly = T)
+library(rCharts, quietly = T)
+library(scales, quietly = T)
 
-setwd("E:/Github_personal/NYC_taxi/")
-shared_path <- "E:/VM_Ubuntu_shared/"
+setwd("/Volumes/Ryan's SSD/Users/Ryan/Github/NYC_taxi/")
 data_path <- "./1.Data/"
 lib_path <- "./2.Code/"
-analysis_path <- "./3.Analysis"
+analysis_path <- "./3.Analysis/"
 
 map_neighborhoods <- dget(paste0(lib_path, "F.map_neighborhoods.R"))
+neighborhood <- dget(paste0(lib_path, "F.neighborhood.R"))
 
-# Download from API (2014)
-#taxi_raw_2014 <- read.socrata("https://data.cityofnewyork.us/resource/gkne-dk5s.json")
-taxi_raw_2014 <- fread(paste0(shared_path, "nyc_taxi_data.csv"))
+# Read data
+run_yr <- 2014
+if (run_yr == 2014) {
+  taxi_raw_2014 <- fread(paste0(data_path, "nyc_taxi_data.csv"))
+  taxi_raw <- taxi_raw_2014
+} else if (run_yr == 2015) {
+  taxi_raw_2015 <- fread(paste0(data_path, "yellow_tripdata_2015-01-06.csv"))
+  setnames(taxi_raw_2015, "tpep_pickup_datetime", "pickup_datetime")
+  setnames(taxi_raw_2015, "tpe p_dropoff_datetime", "dropoff_datetime")
+  taxi_raw <- taxi_raw_2015
+} else stop("Incorrect run year")
 
-# Download from API (2015, through June)
-#taxi_raw <- read.socrata("https://data.cityofnewyork.us/resource/2yzn-sicd.json")
-
-comma(nrow(taxi_raw_2014))
-names(taxi_raw_2014)
-head(taxi_raw_2014)
+comma(nrow(taxi_raw))
+names(taxi_raw)
+head(taxi_raw)
 
 # Take a random sample for data exploration
-taxi_sample <- taxi_raw_2014[sample(.N, 10000)]
-write.csv(taxi_sample, paste0(data_path, "taxi_sample_raw.csv"))
-saveRDS(taxi_sample, paste0(data_path, "taxi_sample_raw.Rda"))
+taxi_sample <- taxi_raw[sample(.N, 10000)]
+write.csv(taxi_sample, paste0(analysis_path, "taxi_sample_raw.csv"))
+saveRDS(taxi_sample, paste0(analysis_path, "taxi_sample_raw.Rda"))
 
 # Clean data / create working variables
 taxi_sample[, `:=`(
@@ -56,6 +61,7 @@ taxi_sample[, `:=`(
 # (100,000 paid queries per day)
 gc <- as.matrix(taxi_sample[1, .(pickup_longitude[1], pickup_latitude[1])])
 rgc <- revgeocode(gc, output = 'more')
+rgc$neighborhood
 geocodeQueryCheck()
 
 # Map coordinates to neighborhoods using Zillow shapefile
@@ -77,7 +83,7 @@ taxi_sample <- merge(x = taxi_sample, y = city_nhood[, .(neighborhood, pickup_ci
 taxi_sample <- merge(x = taxi_sample, y = city_nhood[, .(neighborhood, dropoff_city = city, dropoff_borough = borough)], by.x = "dropoff_nhood", by.y = "neighborhood", all.x = T)
 if (nrow(taxi_sample) != 10000) warning("Merge error")
 
-saveRDS(taxi_sample, paste0(analysis_path, "taxi_sample_processed"))
+saveRDS(taxi_sample, paste0(analysis_path, paste0("taxi_sample_processed_", run_yr, ".Rda")))
 
 # Exploratory analysis
 taxi_sample[, .(
@@ -115,4 +121,13 @@ taxi_sample[, .(
     ,sum_tip = dollar(sum(tip_amount))
     ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
     ,by = .(pickup_city, dropoff_city)]
+
+taxi_sample[, .(
+  num_trips = comma(.N)
+  ,avg_fare = dollar(mean(fare_amount))
+  ,sum_fare = dollar(sum(fare_amount))
+  ,avg_tip = dollar(mean(tip_amount))
+  ,sum_tip = dollar(sum(tip_amount))
+  ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
+  ,by = .(dropoff_borough)]
 
