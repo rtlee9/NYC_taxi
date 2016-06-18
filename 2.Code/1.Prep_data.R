@@ -2,17 +2,22 @@
 # Prep data
 # ****************************************************************************
 
+# Set run parameters
+run_yr <- 2014
+sample_ind <- FALSE
+setwd("E:/Github_personal/NYC_taxi/")
+
 # Set wd and install libraries
 library(RSocrata, quietly = T)
 library(data.table, quietly = T)
 library(scales, quietly = T)
 library(lubridate, quietly = T)
 library(ggmap, quietly = T)
+library(rgeos)
 library(maptools, quietly = T)
 library(rCharts, quietly = T)
 library(scales, quietly = T)
 
-setwd("/Volumes/Ryan's SSD/Users/Ryan/Github/NYC_taxi/")
 data_path <- "./1.Data/"
 lib_path <- "./2.Code/"
 analysis_path <- "./3.Analysis/"
@@ -21,7 +26,6 @@ map_neighborhoods <- dget(paste0(lib_path, "F.map_neighborhoods.R"))
 neighborhood <- dget(paste0(lib_path, "F.neighborhood.R"))
 
 # Read data
-run_yr <- 2014
 if (run_yr == 2014) {
   taxi_raw_2014 <- fread(paste0(data_path, "nyc_taxi_data.csv"))
   taxi_raw <- taxi_raw_2014
@@ -37,16 +41,18 @@ names(taxi_raw)
 head(taxi_raw)
 
 # Take a random sample for data exploration
-taxi_sample <- taxi_raw[sample(.N, 10000)]
-write.csv(taxi_sample, paste0(analysis_path, "taxi_sample_raw.csv"))
-saveRDS(taxi_sample, paste0(analysis_path, "taxi_sample_raw.Rda"))
+if (sample_ind = T) {
+    taxi_working <- taxi_raw[sample(.N, 10000)]
+    write.csv(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".csv"))
+    saveRDS(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".Rda"))
+} else {tax_working <- copy(taxi_raw)}
 
 # Clean data / create working variables
-taxi_sample[, `:=`(
-    pickup_dtime = ymd_hms(taxi_sample$pickup_datetime)
-    ,dropoff_dtime = ymd_hms(taxi_sample$dropoff_datetime)
+taxi_working[, `:=`(
+    pickup_dtime = ymd_hms(taxi_working$pickup_datetime)
+    ,dropoff_dtime = ymd_hms(taxi_working$dropoff_datetime)
 )]
-taxi_sample[, `:=`(
+taxi_working[, `:=`(
     pickup_wday = wday(pickup_dtime)
     ,dropoff_wday = wday(dropoff_dtime)
     ,pickup_wday_l = wday(pickup_dtime, label = T)
@@ -59,7 +65,7 @@ taxi_sample[, `:=`(
 
 # Neighborhood lookup from Google API, but limit 2,500 free queries per day
 # (100,000 paid queries per day)
-gc <- as.matrix(taxi_sample[1, .(pickup_longitude[1], pickup_latitude[1])])
+gc <- as.matrix(taxi_working[1, .(pickup_longitude[1], pickup_latitude[1])])
 rgc <- revgeocode(gc, output = 'more')
 rgc$neighborhood
 geocodeQueryCheck()
@@ -67,9 +73,9 @@ geocodeQueryCheck()
 # Map coordinates to neighborhoods using Zillow shapefile
 NY_nhoods <- readShapePoly(paste0(data_path, "ZillowNeighborhoods-NY/ZillowNeighborhoods-NY.shp"))
 
-taxi_sample$pickup_nhood <- map_neighborhoods(NY_nhoods, taxi_sample$pickup_longitude, taxi_sample$pickup_latitude)
-taxi_sample$dropoff_nhood <- map_neighborhoods(NY_nhoods, taxi_sample$dropoff_longitude, taxi_sample$dropoff_latitude)
-taxi_sample[, .N, .(pickup_nhood, dropoff_nhood)]
+taxi_working$pickup_nhood <- map_neighborhoods(NY_nhoods, taxi_working$pickup_longitude, taxi_working$pickup_latitude)
+taxi_working$dropoff_nhood <- map_neighborhoods(NY_nhoods, taxi_working$dropoff_longitude, taxi_working$dropoff_latitude)
+taxi_working[, .N, .(pickup_nhood, dropoff_nhood)]
 
 city_nhood <- as.data.table(tstrsplit(unique(paste0(NY_nhoods$CITY, ";", NY_nhoods$NAME)), ";"))
 names(city_nhood) <- c("city_borough", "neighborhood")
@@ -79,14 +85,14 @@ city_nhood[, c("city", "borough") := tstrsplit(city_borough, "-")]
 cities_w_dups <- city_nhood[, .N, neighborhood][N == 2]$neighborhood
 city_nhood[neighborhood %in% cities_w_dups][order(city)]
 
-taxi_sample <- merge(x = taxi_sample, y = city_nhood[, .(neighborhood, pickup_city = city, pickup_borough = borough)], by.x = "pickup_nhood", by.y = "neighborhood", all.x = T)
-taxi_sample <- merge(x = taxi_sample, y = city_nhood[, .(neighborhood, dropoff_city = city, dropoff_borough = borough)], by.x = "dropoff_nhood", by.y = "neighborhood", all.x = T)
-if (nrow(taxi_sample) != 10000) warning("Merge error")
+taxi_working <- merge(x = taxi_working, y = city_nhood[, .(neighborhood, pickup_city = city, pickup_borough = borough)], by.x = "pickup_nhood", by.y = "neighborhood", all.x = T)
+taxi_working <- merge(x = taxi_working, y = city_nhood[, .(neighborhood, dropoff_city = city, dropoff_borough = borough)], by.x = "dropoff_nhood", by.y = "neighborhood", all.x = T)
+if (nrow(taxi_working) != 10000) warning("Merge error")
 
-saveRDS(taxi_sample, paste0(analysis_path, paste0("taxi_sample_processed_", run_yr, ".Rda")))
+saveRDS(taxi_working, paste0(analysis_path, paste0("taxi_working_processed_", run_yr, "_", ifelse(sample_ind, "sample", ""), ".Rda")))
 
 # Exploratory analysis
-taxi_sample[, .(
+taxi_working[, .(
     num_trips = comma(.N)
     ,avg_fare = dollar(mean(fare_amount))
     ,sum_fare = dollar(sum(fare_amount))
@@ -95,7 +101,7 @@ taxi_sample[, .(
     ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
     , by = payment_type]
 
-taxi_sample[order(pickup_wday), .(
+taxi_working[order(pickup_wday), .(
     num_trips = comma(.N)
     ,avg_fare = dollar(mean(fare_amount))
     ,sum_fare = dollar(sum(fare_amount))
@@ -104,7 +110,7 @@ taxi_sample[order(pickup_wday), .(
     ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
     ,by = pickup_wday_l]
 
-taxi_sample[order(pickup_month), .(
+taxi_working[order(pickup_month), .(
      num_trips = comma(.N)
     ,avg_fare = dollar(mean(fare_amount))
     ,sum_fare = dollar(sum(fare_amount))
@@ -113,7 +119,7 @@ taxi_sample[order(pickup_month), .(
     ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
     ,by = pickup_month_l]
 
-taxi_sample[, .(
+taxi_working[, .(
     num_trips = comma(.N)
     ,avg_fare = dollar(mean(fare_amount))
     ,sum_fare = dollar(sum(fare_amount))
@@ -122,7 +128,7 @@ taxi_sample[, .(
     ,tip_pct = percent(sum(tip_amount)/sum(fare_amount)))
     ,by = .(pickup_city, dropoff_city)]
 
-taxi_sample[, .(
+taxi_working[, .(
   num_trips = comma(.N)
   ,avg_fare = dollar(mean(fare_amount))
   ,sum_fare = dollar(sum(fare_amount))
