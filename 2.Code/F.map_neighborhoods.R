@@ -7,11 +7,15 @@
 # map_neighborhood function, remove duplicate coordinate pairs before calling
 # lookup, and/or aggregate coordinates
 # ****************************************************************************
-
 function(s, lons, lats) {
-    neighborhoods  <- rep(NA, length(lons));
-    for (i in 1:length(lons)) {
+    require(progress)
+    n <- length(lons)
+    pb <- progress_bar$new(total = n)
+
+    neighborhoods  <- rep(NA, n);
+    for (i in 1:n) {
         neighborhoods[i] <- neighborhood(s, lons[i], lats[i]);
+        pb$tick()
     }
     return(neighborhoods);
 }
