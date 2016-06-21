@@ -8,14 +8,22 @@
 # lookup, and/or aggregate coordinates
 # ****************************************************************************
 function(s, lons, lats) {
-    require(progress)
-    n <- length(lons)
-    pb <- progress_bar$new(total = n)
+    library(tcltk)
+    library(doSNOW)
+    library(foreach)
+    neighborhood <- dget(paste0(lib_path, "F.neighborhood.R"))
 
-    neighborhoods  <- rep(NA, n);
-    for (i in 1:n) {
-        neighborhoods[i] <- neighborhood(s, lons[i], lats[i]);
-        pb$tick()
-    }
-    return(neighborhoods);
+    n <- length(lons)
+    pb <- tkProgressBar(max=n)
+    progress <- function(n) setTkProgressBar(pb, n)
+    opts <- list(progress=progress)
+
+    names <- s$NAME
+    neighborhoods  <- rep(NA, n)
+
+    cl<-makeCluster(4)
+    registerDoSNOW(cl)
+    neighborhoods <- foreach (i = 1:n, .packages="sp", .export="neighborhood", .options.snow=opts, .combine = "c") %dopar% neighborhood(s, lons[i], lats[i]);
+    stopCluster(cl)
+    return(neighborhoods)
 }
