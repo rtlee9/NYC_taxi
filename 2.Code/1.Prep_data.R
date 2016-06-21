@@ -4,7 +4,7 @@
 
 # Set run parameters
 run_yr <- 2014
-sample_ind <- FALSE
+sample_ind <- T
 setwd("E:/Github_personal/NYC_taxi/")
 
 # Set wd and install libraries
@@ -41,11 +41,10 @@ names(taxi_raw)
 head(taxi_raw)
 
 # Take a random sample for data exploration
-if (sample_ind = T) {
-    taxi_working <- taxi_raw[sample(.N, 10000)]
-    write.csv(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".csv"))
+if (sample_ind == T) {
+    taxi_working <- taxi_raw[sample(.N, 1000000)]
     saveRDS(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".Rda"))
-} else {tax_working <- copy(taxi_raw)}
+} else {taxi_working <- taxi_raw}
 
 # Clean data / create working variables
 taxi_working[, `:=`(
@@ -75,6 +74,7 @@ NY_nhoods <- readShapePoly(paste0(data_path, "ZillowNeighborhoods-NY/ZillowNeigh
 
 taxi_working$pickup_nhood <- map_neighborhoods(NY_nhoods, taxi_working$pickup_longitude, taxi_working$pickup_latitude)
 taxi_working$dropoff_nhood <- map_neighborhoods(NY_nhoods, taxi_working$dropoff_longitude, taxi_working$dropoff_latitude)
+
 taxi_working[, .N, .(pickup_nhood, dropoff_nhood)]
 
 city_nhood <- as.data.table(tstrsplit(unique(paste0(NY_nhoods$CITY, ";", NY_nhoods$NAME)), ";"))
