@@ -4,7 +4,7 @@
 
 # Set run parameters
 run_yr <- 2014
-sample_ind <- T
+sample_ind <- F
 setwd("E:/Github_personal/NYC_taxi/")
 
 # Set wd and install libraries
@@ -71,15 +71,21 @@ geocodeQueryCheck()
 
 # Map coordinates to neighborhoods using Zillow shapefile
 NY_nhoods <- readShapePoly(paste0(data_path, "ZillowNeighborhoods-NY/ZillowNeighborhoods-NY.shp"))
+poi_pickup <- taxi_working[, .(x = pickup_longitude, y= pickup_latitude)]
+coordinates(poi_pickup) <- ~ x + y
+proj4string(poi_pickup) <- proj4string(NY_nhoods)
+poi_dropoff <- taxi_working[, .(x = dropoff_longitude, y= dropoff_latitude)]
+poi_dropoff[is.na(x) | is.na(y)] <- c(x = 0, y = 0)
+coordinates(poi_dropoff) <- ~ x + y
+proj4string(poi_dropoff) <- proj4string(NY_nhoods)
 
-taxi_working$pickup_nhood <- map_neighborhoods(NY_nhoods, taxi_working$pickup_longitude, taxi_working$pickup_latitude)
-taxi_working$dropoff_nhood <- map_neighborhoods(NY_nhoods, taxi_working$dropoff_longitude, taxi_working$dropoff_latitude)
-
-taxi_working[, .N, .(pickup_nhood, dropoff_nhood)]
-
-city_nhood <- as.data.table(tstrsplit(unique(paste0(NY_nhoods$CITY, ";", NY_nhoods$NAME)), ";"))
-names(city_nhood) <- c("city_borough", "neighborhood")
-city_nhood[, c("city", "borough") := tstrsplit(city_borough, "-")]
+pickup_poly <- over(poi_pickup, NY_nhoods)
+dropoff_poly <- over(poi_dropoff, NY_nhoods)
+taxi_working[, `:=`(
+    pickup_nhood = pickup_poly$NAME, pickup_city = pickup_poly$CITY, pickup_county = pickup_poly$COUNTY, pickup_state = pickup_poly$STATE
+    ,dropoff_nhood = dropoff_poly$NAME, dropoff_city = dropoff_poly$CITY, dropoff_county = dropoff_poly$COUNTY, dropoff_state = dropoff_poly$STATE
+    )]
+taxi_working[, `:=`(pickup_borough = gsub("New York City-", "", pickup_city), dropoff_borough = gsub("New York City-", "", dropoff_city))]
 
 # Test for duplicates
 cities_w_dups <- city_nhood[, .N, neighborhood][N == 2]$neighborhood
