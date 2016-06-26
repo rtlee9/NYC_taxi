@@ -6,8 +6,11 @@ library(caret)
 library(doMC)
 
 model_in_raw <- copy(taxi_working)[payment_type == "CRD"]
-exclude_cols <- c('pickup_datetime','dropoff_datetime','rate_code','pickup_dtime','dropoff_dtime','dropoff_dt','EST','Events','hday_name','date','rate_code_chr','tip_amount','total_amount','payment_type')
 
+# Aggregate to pickup-day-hour level
+model_in_raw[, .N, ]
+
+exclude_cols <- c('pickup_datetime','dropoff_datetime','rate_code','pickup_dtime','dropoff_dtime','dropoff_dt','EST','Events','hday_name','date','rate_code_chr','tip_amount','total_amount','payment_type')
 # Alert for 1-level variables and replace NAs with new level / median
 for (i in names(model_in_raw)) {
   var <- model_in_raw[, get(i)]
@@ -64,12 +67,4 @@ test_comp$test_pred <- predict(explorer, test_comp)
 
 ggplot(data = test_comp, aes(x = test_pred, y = tip_pct)) +
   geom_point(shape=1) 
-
-test_comp[, pred_rnd := round(test_pred*100)/100]
-acc_plot <- test_comp[, .(avg_tip = sum(tip_amount)/sum(fare_amount)), by=pred_rnd]
-ggplot(data = acc_plot, aes(x = pred_rnd, y = avg_tip)) +
-  geom_bar(stat="identity") + expand_limits(y = 0) + scale_y_continuous(labels = percent) + theme_hc() +
-  labs(title = "Tip % - actual vs predicted", y = "Tip as a % of base fare", x = "Predicted tip %")
-
-test_comp[, pred_dec := quantile(test_pred, probs = seq(0, 1, .1))]
 
