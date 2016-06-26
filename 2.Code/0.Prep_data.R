@@ -17,6 +17,7 @@ library(rgeos)
 library(maptools, quietly = T)
 library(rCharts, quietly = T)
 library(scales, quietly = T)
+library(quantmod, quietly = T)
 
 data_path <- "./1.Data/"
 lib_path <- "./2.Code/"
@@ -42,7 +43,7 @@ names(taxi_raw)
 head(taxi_raw)
 
 # Take a random sample for data exploration
-if (sample_ind = T) {
+if (sample_ind) {
     taxi_working <- taxi_raw[sample(.N, 10000)]
     write.csv(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".csv"))
     saveRDS(taxi_working, paste0(analysis_path, "taxi_sample_", run_yr,".Rda"))
@@ -67,7 +68,7 @@ taxi_working[, `:=`(
     ,dropoff_dt = date(dropoff_dtime)
     ,pickup_hour = lubridate::hour(pickup_dtime)
     ,elapsed = as.numeric(dropoff_dtime - pickup_dtime)
-    ,avg_speed = trip_distance/as.numeric(dropoff_dtime - pickup_dtime)*60*60
+    ,avg_speed = ifelse(dropoff_dtime == pickup_dtime, 0, trip_distance/as.numeric(dropoff_dtime - pickup_dtime)*60*60)
 )]
 taxi_working[, `:=`(
   pickup_pod = ifelse(pickup_hour <= 4 | pickup_hour >= 23, "Night",
@@ -121,7 +122,6 @@ names(weather) <- gsub(" ", "_", names(weather))
 weather[, date := mdy(EST)]
 weather[, WindDirDegrees := tstrsplit(`WindDirDegrees<br_/>`, "<")[1]]
 weather[, `WindDirDegrees<br_/>` := NULL]
-weather[, WindDirDegrees := tstrsplit(`WindDirDegrees<br_/>`, "<")[1]]
 taxi_working <- merge(x = taxi_working, y = weather, by.x = "pickup_dt", by.y = "date", all.x = T)
 taxi_working[, `:=`(
   weather_snow = grepl("Snow", Events)

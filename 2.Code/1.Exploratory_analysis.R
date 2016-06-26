@@ -160,3 +160,18 @@ ggplot(data = bplot5[num_trips >= 10], aes(x = x_var, y = tip_pct)) +
   geom_bar(stat="identity") + expand_limits(y = 0) + scale_y_continuous(labels = percent) + theme_hc() +
   labs(title = "Tip by pickup hour", y = "Tip as a % of base fare", x = "Pickup hour") + facet_wrap(~ x2_var, nrow = 2)
 
+# Elapsed time
+round_factor <- 10
+bplot6 <- taxi_working[payment_type == "CRD" & pickup_nhood %in% mhtn_nhoods, .(
+  num_trips = .N
+  ,avg_fare = mean(fare_amount)
+  ,sum_fare = sum(fare_amount)
+  ,avg_tip = mean(tip_amount)
+  ,sum_tip = sum(tip_amount)
+  ,tip_pct = sum(tip_amount)/sum(fare_amount)
+  ,sum_dist = sum(trip_distance)
+  ,avg_dist = mean(trip_distance))
+  ,by = .(x_var = round(elapsed/round_factor, 1)*round_factor)]
+ggplot(data = bplot6[num_trips >= 10], aes(x = x_var, y = tip_pct)) +
+  geom_bar(stat = "identity") + expand_limits(y = 0) + scale_y_continuous(labels = percent) + theme_hc() +
+  labs(title = "Tip by elapsed time", y = "Tip as a % of base fare", x = "Elapsed time (sec)")
