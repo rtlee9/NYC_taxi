@@ -19,13 +19,13 @@
 Three-part series
 1. Exploratory analysis
   * Heat maps
-  * Best tippers
-  * Tip by top model factors
+  * Tip by top model factors (best tippers)
 1. Flow / network analysis
   * Where do people go, by neighborhood?
   * Where do people go after eating at 11 Madison
   * What are the most insular neighborhoods?
   * Where do Monday morning / Thursday evening LGA / JFK dropoffs come from? Pickups go to?
+  * Biggest net inflow
 1. Predictive model
   * What will the average tip be per day-hour / neighborhood / hour?
   * How much volume will come from each day-hour / neighborhood / hour?
