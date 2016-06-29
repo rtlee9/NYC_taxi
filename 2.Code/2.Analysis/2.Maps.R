@@ -28,12 +28,12 @@ NYC_map + stat_density2d(
 # Map pickup locations by day of week
 
 # Map dropoff locations by pickup location
-NYC_map_bw +
+NYC_map +
   geom_point(size=0.2, alpha = 1/2, aes(pickup_longitude, pickup_latitude, color="pickup"), data=taxi_working[pickup_nhood %in% top_pickups]) +
   geom_point(size=0.2, alpha = 1/2, aes(dropoff_longitude, dropoff_latitude, color="dropoff"), data=taxi_working[pickup_nhood %in% top_pickups]) +
   geom_segment(data = taxi_working[pickup_nhood %in% top_pickups], aes(x = pickup_longitude, y = pickup_latitude, xend = dropoff_longitude, yend = dropoff_latitude), color = 'grey50', size = 0.05) +
   scale_alpha(guide = 'none') + facet_wrap(~ pickup_nhood, ncol = 6) +
-  theme(legend.position = "bottom") +scale_colour_tableau()
+  theme(legend.position = "bottom") + scale_colour_tableau()
 
 # ****************************************************************************
 # Alternative maps
