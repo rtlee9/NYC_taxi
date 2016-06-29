@@ -9,10 +9,6 @@ select
 from public.nyc_taxi_yellow_14
 ;
 
-# Note: indexing only saves ~2% on geom join time
-CREATE INDEX index_pickup ON temp_taxi_full USING gist (pickup);
-CREATE INDEX index_dropoff ON temp_taxi_full USING gist (dropoff);
-
 CREATE TABLE temp_nyc_geo AS
 SELECT
   t1.id
