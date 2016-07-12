@@ -13,7 +13,8 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 NYC_map_bw +
   geom_point(size=0.2, alpha = 1/2, aes(pickup_longitude, pickup_latitude, color="pickup"), data=taxi_working) +
   geom_point(size=0.2, alpha = 1/2, aes(dropoff_longitude, dropoff_latitude, color="dropoff"), data=taxi_working) + 
-  scale_colour_tableau()
+  scale_colour_manual(values = c("#FF7F0E", "#1F77B4"))
+
 
 # Map pickup locations by day of week
 NYC_map + stat_density2d(
@@ -40,3 +41,24 @@ NYC_map +
 # ****************************************************************************
 #NYC <- get_map("manhattan", zoom = 12)
 #NYC <- get_map("penn station", zoom = 13)
+
+alpha_range = c(0.005, 0.80)
+
+plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_range) {
+  gg <- NYC_map_bw +
+    geom_point(size = 0.001, aes(alpha = trips, lon, lat, color="pickup"), data=pick_by_pick_neigh[pick_neigh == neigh]) +
+    geom_point(size = 0.001, aes(alpha = trips, lon, lat, color="dropoff"), data=drop_by_pick_neigh[pick_neigh == neigh]) +
+    scale_colour_manual(values = c("#FF7F0E", "#1F77B4")) +
+    guides(colour = guide_legend(override.aes = list(size=2))) +
+    scale_alpha_continuous(range = alpha_range, trans = "sqrt", guide = 'none') + 
+    ggtitle(neigh)
+  
+  ggsave(filename = paste0("Pick_neigh_", neigh, '.png'), plot = gg, path = '/Users/Ryan/Github/NYC_taxi/5.Plots', dpi = 150, height = 5, units = 'in')
+}
+
+plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, 'West Village', alpha_range)
+
+for (i in manhattan_nhoods$name) {
+  print(paste('Printing plot for', i))
+  plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, i, alpha_range)
+}

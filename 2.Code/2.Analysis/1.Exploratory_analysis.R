@@ -175,3 +175,29 @@ bplot6 <- taxi_working[payment_type == "CRD" & pickup_nhood %in% mhtn_nhoods, .(
 ggplot(data = bplot6[num_trips >= 10], aes(x = x_var, y = tip_pct)) +
   geom_bar(stat = "identity") + expand_limits(y = 0) + scale_y_continuous(labels = percent) + theme_hc() +
   labs(title = "Tip by elapsed time", y = "Tip as a % of base fare", x = "Elapsed time (sec)")
+
+
+# Pickup neighborhood
+bplot7 <- taxi_working[payment_type == "CRD" & pickup_nhood %in% mhtn_nhoods, .(
+  num_trips = .N
+  ,avg_fare = mean(fare_amount)
+  ,sum_fare = sum(fare_amount)
+  ,avg_tip = mean(tip_amount)
+  ,sum_tip = sum(tip_amount)
+  ,tip_pct = sum(tip_amount)/sum(fare_amount)
+  ,sum_dist = sum(trip_distance)
+  ,avg_dist = mean(trip_distance))
+  ,by = .(x_var = pickup_nhood)]
+ggplot(data = bplot7[num_trips >= 10], aes(x = x_var, y = tip_pct)) +
+  geom_bar(stat = "identity") + expand_limits(y = 0) + scale_y_continuous(labels = percent) + theme_hc() +
+  labs(title = "Tip by elapsed time", y = "Tip as a % of base fare", x = "Elapsed time (sec)")
+
+
+gg < ggplot(data = dt, aes(x = reorder(route, Trips), y = Trips, fill = "temp")) +
+  geom_bar(stat = "identity") + coord_flip() + expand_limits(y = 0) + scale_y_continuous(labels = scales::comma) + 
+  labs(y = 'Trips', x = "Route") + theme_minimal() + scale_fill_tableau() + guides(fill=F)
+
+
+gg <- ggplot(data = dt_plot, aes(x = reorder(route, trips), y = trips, fill = weekend)) +
+  geom_bar(stat = "identity") + coord_flip() + expand_limits(y = 0) + scale_y_continuous(labels = scales::comma) + 
+  labs(y = 'Trips', x = "Route") + theme_minimal() + scale_fill_tableau()
