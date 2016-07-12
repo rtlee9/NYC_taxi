@@ -4,4 +4,7 @@
 1.Data/yellow_tripdata_2015-01-06.csv
 *.Rhistory
 *full*.Rda
+*.html
+*.png
+*.gif
 
