@@ -14,7 +14,7 @@ library(rCharts, quietly = T)
 library(scales, quietly = T)
 library(quantmod, quietly = T)
 
-setwd("E:/Github_personal/NYC_taxi/")
+setwd("/Users/Ryan/Github/NYC_taxi")
 data_path <- "./1.Data/"
 lib_path <- "./2.Code/"
 analysis_path <- "./3.Analysis/"
