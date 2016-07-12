@@ -1,19 +1,23 @@
 # Next steps
 
-* Full data run
-  * Consider aggregation
-  * Use sql for location mapping
 * Heat map by key factors
-* User-input polygon - R Shiny
 * Map flows (Sankey, or other)
   * Use neighborhood centroids
   * All trips from one neighborhood
-* Build predictive model
-  * Volume model
-    * Subway closings
-    * number of subway entrances
-  * Tip model
+* Build volume predictive model
+  * Subway closings
+  * Number of subway entrances
+* Clean SQL tables
+  * Add 2015 taxi rides
+  * Clean column [data types](https://www.postgresql.org/docs/8.4/static/datatype-numeric.html)
+* User-input polygon - R Shiny
 * Policy implications
+* Net flows by nhood
+  * Time lapse of net flow (rounded, location)
+* Taxi volumes in subway deserts
+* Vacation routes
+* Same route, speeds and tips
+* Taxi drivers - maximize dollars / min
 
 ## Documentation
 Three-part series
