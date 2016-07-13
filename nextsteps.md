@@ -1,7 +1,10 @@
 # Next steps
 
 ## Near term
-* Note party nhood is Manhattan only
+* Fix git merge errors: replace code in origin master with macbook local
+* Fix tooltips for tow cash share chart
+* Adjust tips for tow
+* Proofread
 
 ## Long term
 * Same route, speeds and tips
