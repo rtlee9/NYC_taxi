@@ -37,7 +37,7 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 
 ```
 
-In this post I explore NYC yellow cab data neighborhood-by-neighborhood. I examine NYC taxi rides from a neighborhood-centric perspective through a set of superlatives that highlight the diverse nature of NYC neighborhoods, as defined by [Zillow](http://www.zillow.com/howto/api/neighborhood-boundaries.htm). Superlatives presented in this post are simple summary statistics, and do not control for other factors (e.g., average distance traveled).
+In this post I explore NYC yellow cab data neighborhood-by-neighborhood. I examine NYC taxi rides from a neighborhood-centric perspective through a set of superlatives that highlight the diverse nature of NYC neighborhoods, as defined by [Zillow](http://www.zillow.com/howto/api/neighborhood-boundaries.htm). Superlatives presented in this post are limited to Manhattan neighborhoods, as other neighborhoods in other boroughs generally have lower volumes and differ from the average trip in other ways (e.g., higher average distance draveled, low outbound:inbound ratio).
 
 This post uses 2014 yellow cab data sourced from [NYC OpenData](https://data.cityofnewyork.us/view/ba8s-jw6u). I used PostgreSQL, PostGIS, and R for the data management, mapping, analysis, and visuals (thanks to [Todd Schneider](https://github.com/toddwschneider/nyc-taxi-data) for his instructions). Plots were made with rCharts NVD3 and maps were made with ggmap.
 
@@ -45,18 +45,14 @@ This post uses 2014 yellow cab data sourced from [NYC OpenData](https://data.cit
 Figure 1 outlines the top neighborhood-to-neighborhood routes. The list is dominated by three neighborhoods: the Upper East Side, Midtown, and the Upper West Side.
 
 ##### Table 1: top routes
-```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+```{r kable, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 
 dt <- tow_nhood_sum[!is.na(pick_neigh) & !is.na(drop_neigh), .(Trips = sum(trips)), .(`Pickup neighborhood` = pick_neigh, `Dropoff neighborhood` = drop_neigh)][order(-Trips)][1:10]
 kable(dt, format.args = list(big.mark = ","), row.names = FALSE)
 
 ```
 
-I would venture that there are a few reasons these three neighborhoods dominate this list:
-
-1. Size / concentration of residents: each of these three neighborhoods are geographically large, and likely contain more residents, commuters, and/or tourists than the other neighborhoods
-1. Lack of alternatives: depending on the destination, public transportation from these neighborhoods can be painful; as someone who's lived in each of these three neighborhoods I can vouch for this
-1. Type of pickups: people in these neighborhoods may differ from people in other neighborhoods that increases their propensity to take cabs (e.g., disposable income, availability of expense accounts, laziness, limited time, values)
+I would venture that the reason these three neighborhoods dominate this list is due to the size and concentration of residents, commuters and torists in these neighborhoods. Each of these three neighborhoods are geographically large, and likely contain more  people available for pickup than the other neighborhoods. Additinally, depending on the destination, public transportation from these neighborhoods can be painful[^1]. Lastly, it's conceivable that people in these neighborhoods may differ from people in other neighborhoods in a way that increases their propensity to take cabs (e.g., disposable income, availability of expense accounts, laziness, limited time, values).
 
 Figure 2 shows the same trip volumes split by time of week. It indicates that there are significant differences in the popularity of certain routes based on the time of week. Routes ending in Midtown are far more popular on weekday evenings than on weekday mornings, while the opposite is true for routes originating from Midtown.
 
@@ -81,7 +77,7 @@ p1$print(include_assets=TRUE)
 
 ### Best / worst tippers
 
-* __Definition:__ average tip percentage[^1]
+* __Definition:__ average tip percentage, Mahattan pickups[^2]
 * __Best tippers:__ Midtown pickups
 * __Worst tippers:__ East Harlem pickups
 
@@ -89,7 +85,7 @@ If you're a taxi driver, this doesn't necessarily mean you'll want to be cruisin
 
 Additionally, this post doesn't attribue any _reason_ to these tip rates. East Harlem pickups may experience poor service, they could be unwilling to tip over a certain percentage due to less disposable income, they could generally take taxis at [times of day associated with lower tips](http://www.bloomberg.com/news/articles/2014-07-31/heres-how-much-you-should-be-tipping-your-cab-driver), or a host of other reasons.
 
-##### Figure 2: Average tip by Manhattan neighborhood
+##### Figure 2: Average tip by neighborhood
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 
 tip <- neighborhood_sum[pick_neigh %in% manhattan_nhoods$name, .(`Average tip %` = sum(tip)/sum(fare)), .(pick_neigh)][order(-`Average tip %`)]
@@ -104,11 +100,11 @@ p3$print(include_assets=TRUE)
 ```
 
 ### Furthest / shortest travelers
-* __Definition:__ average distance traveled, by pickup neighborhood
-* __Furthest travelers:__ Financial District pickups
-* __Shortest travelers:__ Gramercy pickups
+* __Definition:__ average distance traveled, Mahattan pickups
+* __Furthest travelers__: Financial District pickups
+* __Shortest travelers__: Gramercy pickups
 
-Where are Financial District pickups and Gramercy pickups going that makes their average trip so long / short, respectively? Midtown. Midtown dropoffs account for 12% of trips from the Financial District and 16% of trips from Gramercy[^2].
+Where are Financial District pickups and Gramercy pickups going that makes their average trip so long / short, respectively? Midtown. Midtown dropoffs account for 12% of trips from the Financial District and 16% of trips from Gramercy[^3].
 
 ##### Figure 3: Average distance traveled by pickup neighborhood
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
@@ -126,10 +122,10 @@ p3$print(include_assets=TRUE)
 ```
 
 ### Party index
-* __Definition:__ ratio of outbound trips to inbound trips
+* __Definition:__ ratio of outbound trips to inbound trips, Mahattan pickups
 * __Biggest party neighborhood:__ Lower East Side
 
-This party index identifies neighborhoods where more more trips leave a given neighborhood than enter that neighborhood early Saturday and Sunday mornings (presumably, after a late night out Friday and Saturday, respectively). Todd Schneider uses a slightly different index of late night activity [here](http://toddwschneider.com/posts/analyzing-1-1-billion-nyc-taxi-and-uber-trips-with-a-vengeance/#late-night-taxi-index). Todd's index identifies late night hotspots by comparing pickup volume during Friday and Saturday nights to volumes during other times of the week. This might fail to identify neighborhoods that have high trafic volumes during non-party hours, and might mistakenly identify neighborhoods that have low trafic volumes during non-party hours. Similarly, my index might fail to identify neighborhoods that have a lot of party-goers returning from other areas, and might mistakenly identify neighborhoods where no one gets dropped off. Neither index is perfect - both offer different lenses of the same phenomenon.
+This party index identifies neighborhoods where more more trips leave a given neighborhood than enter that neighborhood early Saturday and Sunday mornings (presumably, after a late night out Friday and Saturday, respectively). Todd Schneider uses a slightly different index of late night activity [here](http://toddwschneider.com/posts/analyzing-1-1-billion-nyc-taxi-and-uber-trips-with-a-vengeance/#late-night-taxi-index). Todd's index identifies late night hotspots by comparing pickup volume during Friday and Saturday nights to volumes during other times of the week. I created my index in order to better capture neighborhoods with naturally high volumes during non-party hours[^4].
 
 ##### Table 2: Top 5 party destinations
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
@@ -142,11 +138,11 @@ kable(dt, format.args = list(big.mark = ","), row.names = FALSE)
 ```
 
 ## Most / least likely to pay with cash
-* __Definition:__ % of trips paid in cash, by pickup neighborhood
-* __Most likely to pay with cash:__ East Harlem
-* __Least likely to pay with cash:__ Battery Park
+* __Definition:__ percent of trips paid in cash, Mahattan pickups
+* __Most likely to pay with cash__: East Harlem pickups
+* __Least likely to pay with cash__: Battery Park pickups
 
-According to the [Urban Institute](http://www.urban.org/interactive-map-where-are-unbanked-and-underbanked-new-york-city), households in Harlem are 2.15 times as likely to be unbanked as the average Manhattan household[^3]. This could be a contributing factor, but it's impossible to say how much of the cash-card disparity is caused by the underlying household financials.
+According to the [Urban Institute](http://www.urban.org/interactive-map-where-are-unbanked-and-underbanked-new-york-city), households in Harlem are 2.15 times as likely to be unbanked as the average Manhattan household[^5]. This could be a contributing factor, but it's impossible to say how much of the cash-card disparity is caused by the underlying household financials.
 
 ##### Figure 4: % of trips paid in cash, by pickup neighborhood
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
@@ -162,9 +158,9 @@ p3$print(include_assets=TRUE)
 
 ```
 
-One thing that is easy to check is whether Harlem pickus occur more often at times associated with cash fres. Card usage for NYC yellow cabs peaks during morning and evening commuting hours; cash fares are most likely on weekends, mid-day on weekdays, and after work hours on weekdays. Figure 5 shows that a larger share of Harlem's pickups originate during these times, relative to the rest of Manhattan.
-
 ##### Figure 5: % of trips paid in cash, by time of week
+Card usage for NYC yellow cabs peaks during morning and evening commuting hours; cash fares are most likely on weekends, mid-day on weekdays, and after work hours on weekdays. Figure 5 shows that a larger share of Harlem's pickups originate during these times, relative to the rest of Manhattan.
+
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 
 tow_hour <- tow_nhood_sum[pick_neigh %in% manhattan_nhoods$name & americanholiday == 'No holiday', .(`% of trips paid in cash (left axis)` = sum(ifelse(payment_type == 'CSH', trips, 0))/sum(trips), `% of all Harlem trips` = sum(ifelse(pick_neigh == 'Harlem', trips, 0))/sum(tow_nhood_sum[pick_neigh == 'Harlem']$trips), `% of all Manhattan trips` = sum(trips)/sum(tow_nhood_sum$trips)), .(dayofweek, pick_hour, wday_hour = dayofweek + round(pick_hour/24,4))][order(dayofweek, pick_hour)]
@@ -248,7 +244,7 @@ p3$print(include_assets=TRUE)
 
 ```
 
-Adjusting for the time of week would only drop Harlem's average cash payment rate down by 4 percentage points, at which point it would still only be second only to Inwood[^4]. Clearly, there are other reasons driving Harlem's high cash payment rates.
+Adjusting for the time of week would only drop Harlem's average cash payment rate down by 4 percentage points, at which point it would still only be second only to Inwood[^6]. Clearly, there are other reasons driving Harlem's high cash payment rates.
 
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 
@@ -259,10 +255,9 @@ adj_rate <- tow_hour[, sum(diff*cash_share)]
 ```
 
 ### Most diverse / most insular
-* __Definition:__ share of all dropoffs originating from the same neighborhood
-* __Most diverse:__ Chinatown
-* __Most insular (least diverse):__ Upper East Side
-
+* __Definition:__ share of all dropoffs originating from the same neighborhood, Mahattan pickups
+* __Most diverse:__ Chinatown dropoffs
+* __Most insular (least diverse):__ Upper East Side dropoffs
 
 ##### Figure 6: Diversity of dropoffs by neighborhood (% of dropoffs originating from same neighborood)
 ```{r, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
@@ -286,7 +281,9 @@ p3$print(include_assets=TRUE)
 
 ### Footnotes
 
-[^1]: Calculated as total tip as a fraction of total base fare; figures exclude trips not paid for by card, as tips for these fares are rarely recorded
-[^2]: Turns out this is no more than average -- 16% of all trips end in Midtown
-[^3]: Unbanked defined as no member of the household has a checking or savings account; as of 2013
-[^4]: Adjustment calculated as the sum product of the dark blue and light orange lines in Figure 4
+[^1]: As someone who's lived in each of these three neighborhoods I can vouch for this
+[^2]: Calculated as total tip as a fraction of total base fare; figures exclude trips not paid for by card, as tips for these fares are rarely recorded
+[^3]: Turns out this is no more than average -- 16% of all trips end in Midtown
+[^4]: Todd's late night index might fail to identify neighborhoods that have high trafic volumes during non-party hours, and might mistakenly identify neighborhoods that have low trafic volumes during non-party hours. Conversely, my index might fail to identify neighborhoods that have a lot of party-goers returning from other areas, and might mistakenly identify neighborhoods where no one gets dropped off.
+[^5]: Unbanked defined as no member of the household has a checking or savings account; as of 2013
+[^6]: Adjustment calculated as the sum product of the dark blue and light orange lines in Figure 4
