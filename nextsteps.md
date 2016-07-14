@@ -1,10 +1,10 @@
 # Next steps
 
 ## Near term
-* Fix tooltips for tow cash share chart
 * Add map gif to post, and to github
 * Proofread
-* Diversity index
+* Fact check
+* Add [anchors](http://stackoverflow.com/questions/33913780/internal-links-in-rmarkdown-dont-work)
 
 ## Long term
 * Same route, speeds and tips
