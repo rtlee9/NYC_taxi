@@ -2,8 +2,9 @@
 
 ## Near term
 * Fix tooltips for tow cash share chart
-* Adjust tips for tow
+* Add map gif to post, and to github
 * Proofread
+* Diversity index
 
 ## Long term
 * Same route, speeds and tips
