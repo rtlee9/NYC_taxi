@@ -1,9 +1,5 @@
 # Next steps
 
-## Near term
-* Proofread
-* Fact check
-
 ## Long term
 * Same route, speeds and tips
 * Build volume predictive model
@@ -13,3 +9,4 @@
 * Taxi volumes in subway deserts
 * Vacation routes
 * Taxi drivers - maximize dollars / min
+
