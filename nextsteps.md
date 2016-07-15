@@ -1,10 +1,8 @@
 # Next steps
 
 ## Near term
-* Fix tooltips for tow cash share chart
-* Add map gif to post, and to github
 * Proofread
-* Diversity index
+* Fact check
 
 ## Long term
 * Same route, speeds and tips
