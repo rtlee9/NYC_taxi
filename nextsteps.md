@@ -1,10 +1,8 @@
 # Next steps
 
 ## Near term
-* Add map gif to post, and to github
 * Proofread
 * Fact check
-* Add [anchors](http://stackoverflow.com/questions/33913780/internal-links-in-rmarkdown-dont-work)
 
 ## Long term
 * Same route, speeds and tips
