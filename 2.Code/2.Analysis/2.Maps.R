@@ -58,7 +58,7 @@ plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_rang
     scale_colour_manual(values = c("#FF7F0E", "#1F77B4")) +
     guides(color = guide_legend(override.aes = list(size=2))) +
     scale_alpha_continuous(range = alpha_range, trans = "sqrt", guide = 'none') + 
-    ggtitle(neigh) + annotate("text", x = -73.877, y = 40.675, colour = "#2CA02C", label = "eightportions.com", fontface="bold.italic", family="Arial")
+    ggtitle(neigh) + annotate("text", x = -73.875, y = 40.675, colour = "#2CA02C", label = "eightportions.com", fontface="bold.italic", family="Arial", size = 2)
   
   
   if (plot_method == "print"){return(gg)}
@@ -69,8 +69,9 @@ plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_rang
 
 g <- plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, 'Chinatown', alpha_range, "print")
 g
+plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, 'Chinatown', alpha_range, "save")
 
-for (i in manhattan_nhoods$name) {
+for (i in manhattan_nhoods[order(name)]$name) {
   if (i != 'Inwood') {
     print(paste('Printing plot for', i))
     plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, i, alpha_range, "save")
