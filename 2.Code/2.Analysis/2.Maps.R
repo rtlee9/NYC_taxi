@@ -42,23 +42,37 @@ NYC_map +
 #NYC <- get_map("manhattan", zoom = 12)
 #NYC <- get_map("penn station", zoom = 13)
 
+pg = dbDriver("PostgreSQL")
+con = dbConnect(pg, password="", host="localhost", port=5432)
+pick_by_pick_neigh<- as.data.table(dbReadTable(con, "pick_by_pick_neigh"))
+drop_by_pick_neigh <- as.data.table(dbReadTable(con, "drop_by_pick_neigh"))
+hold <- dbDisconnect(con)
+
+
 alpha_range = c(0.005, 0.80)
 
-plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_range) {
+plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_range, plot_method = "print") {
   gg <- NYC_map_bw +
     geom_point(size = 0.001, aes(alpha = trips, lon, lat, color="pickup"), data=pick_by_pick_neigh[pick_neigh == neigh]) +
     geom_point(size = 0.001, aes(alpha = trips, lon, lat, color="dropoff"), data=drop_by_pick_neigh[pick_neigh == neigh]) +
     scale_colour_manual(values = c("#FF7F0E", "#1F77B4")) +
-    guides(colour = guide_legend(override.aes = list(size=2))) +
+    guides(color = guide_legend(override.aes = list(size=2))) +
     scale_alpha_continuous(range = alpha_range, trans = "sqrt", guide = 'none') + 
-    ggtitle(neigh)
+    ggtitle(neigh) + annotate("text", x = -73.877, y = 40.675, colour = "#2CA02C", label = "eightportions.com", fontface="bold.italic", family="Arial")
   
-  ggsave(filename = paste0("Pick_neigh_", neigh, '.png'), plot = gg, path = '/Users/Ryan/Github/NYC_taxi/5.Plots', dpi = 150, height = 5, units = 'in')
+  
+  if (plot_method == "print"){return(gg)}
+  if (plot_method == "save") {
+    ggsave(filename = paste0("Pick_neigh_", neigh, '.png'), plot = gg, path = '/Users/Ryan/Github/NYC_taxi/5.Plots', dpi = 150, height = 5, units = 'in')
+  }
 }
 
-plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, 'West Village', alpha_range)
+g <- plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, 'Chinatown', alpha_range, "print")
+g
 
 for (i in manhattan_nhoods$name) {
-  print(paste('Printing plot for', i))
-  plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, i, alpha_range)
+  if (i != 'Inwood') {
+    print(paste('Printing plot for', i))
+    plot_neigh(pick_by_pick_neigh, drop_by_pick_neigh, i, alpha_range, "save")
+  }
 }
