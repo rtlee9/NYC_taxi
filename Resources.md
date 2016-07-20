@@ -21,3 +21,4 @@
 * [Hubcap](http://hubcap.org)
 * Data from the Census Bureau’s American Community Survey , visualized by [WNYC](http://www.wnyc.org/story/174508-blog-census-locates-citys-wealthiest-and-poorest-neighborhoods/)
 * [Subway deserts](https://team.carto.com/u/chriswhong/viz/e60e7660-3982-11e5-9997-0e853d047bba/public_map)
+* [Google maps routing](https://rpubs.com/nickbearman/r-google-map-making)
