@@ -1,81 +1,86 @@
-
-ALTER TABLE nyc_taxi_yellow_14 ADD COLUMN id BIGSERIAL PRIMARY KEY;
-ALTER TABLE public.zillow_sp ADD PRIMARY KEY (regionid);
-
-CREATE TABLE temp_taxi_full AS
-select
-  id
-  , ST_SetSRID(ST_MakePoint(pickup_longitude, pickup_latitude), 4269) as pickup
-  , ST_SetSRID(ST_MakePoint(dropoff_longitude, dropoff_latitude), 4269) as dropoff
-from public.nyc_taxi_yellow_14
-;
-
-CREATE TABLE temp_nyc_geo AS
-SELECT
-  t1.id
-  ,spick.regionid as pick_regionid
-  ,sdrop.regionid as drop_regionid
-FROM temp_taxi_full t1
-LEFT JOIN zillow_sp sdrop
-  on ST_Within(t1.dropoff, sdrop.geom)
-LEFT JOIN zillow_sp spick
-  on ST_Within(t1.pickup, spick.geom)
-;
-
-DROP TABLE temp_taxi_full;
-
-CREATE TABLE taxi_nhood_full as
-SELECT
-  t.*
-  ,t.pickup_datetime::date as pick_date
-  ,extract(hour from t.pickup_datetime::time) as pick_hour
-  ,extract(epoch from (t.dropoff_datetime::timestamp - t.pickup_datetime::timestamp)) as elapsed
-  ,g.pick_regionid
-  ,g.pick_neigh
-  ,g.drop_regionid
-  ,g.drop_neigh
-from temp_nyc_geo g
-inner join nyc_taxi_yellow_14 t
-  on g.id = t.id
-;
-
-DROP TABLE temp_nyc_geo;
-CREATE INDEX idx_pick_id ON taxi_nhood_full (pick_regionid);
-CREATE INDEX idx_drop_id ON taxi_nhood_full (drop_regionid);
+/********************************************************************
+  Create views for frequently accessed cuts
+********************************************************************/
 
 CREATE MATERIALIZED VIEW pick_by_pick_neigh AS
 select
-  round(pickup_longitude::numeric, 4) as lon, round(pickup_latitude::numeric, 4) as lat
-  ,pick_neigh
+  round(t.pickup_longitude::numeric, 4) as lon, round(t.pickup_latitude::numeric, 4) as lat
+  ,z.name as pick_neigh
   ,count(*) as trips
 from taxi_nhood_full t
 left join zillow_sp z
-  on t.pick_regionid = z.regionid
+  on t.pick_zgid = z.gid
 where 1=1
   and z.city = 'New York City-Manhattan'
 group by
-  round(pickup_longitude::numeric, 4), round(pickup_latitude::numeric, 4)
-  ,pick_neigh
+  round(t.pickup_longitude::numeric, 4), round(t.pickup_latitude::numeric, 4)
+  ,z.name
 ;
 
 CREATE MATERIALIZED VIEW drop_by_pick_neigh AS
 select
-  round(dropoff_longitude::numeric, 4) as lon, round(dropoff_latitude::numeric, 4) as lat
-  ,pick_neigh
+  round(t.dropoff_longitude::numeric, 4) as lon, round(t.dropoff_latitude::numeric, 4) as lat
+  ,z.name as pick_neigh
   ,count(*) as trips
 from taxi_nhood_full t
 left join zillow_sp z
-  on t.pick_regionid = z.regionid
+  on t.pick_zgid = z.gid
 where 1=1
   and z.city = 'New York City-Manhattan'
 group by
-  round(dropoff_longitude::numeric, 4), round(dropoff_latitude::numeric, 4)
-  ,pick_neigh
+  round(t.dropoff_longitude::numeric, 4), round(t.dropoff_latitude::numeric, 4)
+  ,z.name
 ;
 
-CREATE INDEX indx_pick_neigh ON drop_by_pick_neigh (pick_neigh);
---SELECT COUNT(*) FROM drop_by_pick_neigh;
+-- Census blocks base summary
+CREATE MATERIALIZED VIEW tow_ctb_sum AS
+SELECT
+  zpick.bctcb2010 as pick_bctcb
+  ,zpick.ct2010 as pick_ct
+  ,zpick.boroname as pick_borough
+  ,zdrop.bctcb2010 as drop_bctcb
+  ,zdrop.ct2010 as drop_ct
+  ,zdrop.boroname as drop_borough
+  ,sum(t.fare_amount) as fare
+  ,sum(t.tip_amount) as tip
+  ,sum(t.passenger_count) as passengers
+  ,sum(t.trip_distance) as distance
+  ,sum(t.elapsed) as elapsed
+  ,count(*) as trips
+FROM taxi_nhood_full t
+left join public.nycb2010 zpick
+  on t.pick_bgid = zpick.gid
+left join public.nycb2010 zdrop
+  on t.drop_bgid = zdrop.gid
+left join date_dim d
+  on t.pick_date = d.date
+group by
+  zpick.bctcb2010
+  ,zpick.ct2010
+  ,zpick.boroname
+  ,zdrop.bctcb2010
+  ,zdrop.ct2010
+  ,zdrop.boroname
+;
 
+CREATE MATERIALIZED VIEW top10routes_full as
+select t.*, zpick.bctcb2010 as pick_bctcb, zdrop.bctcb2010 as drop_bctcb, s.rank
+from taxi_nhood_full t
+left join public.nycb2010 zpick
+  on t.pick_bgid = zpick.gid
+left join public.nycb2010 zdrop
+  on t.drop_bgid = zdrop.gid
+inner join (
+  select pick_bctcb, drop_bctcb, trips, row_number() over() as rank
+  from tow_ctb_sum
+  where pick_borough = 'Manhattan' and drop_borough = 'Manhattan'
+    and pick_bctcb <> drop_bctcb
+  order by trips desc limit 10
+) s
+  on zpick.bctcb2010 = s.pick_bctcb and zdrop.bctcb2010 = s.drop_bctcb
+;
+
+-- Neighborhood base summary
 CREATE MATERIALIZED VIEW tow_nhood_sum AS
 SELECT
   zpick.name as pick_neigh
@@ -96,9 +101,9 @@ SELECT
   ,count(*) as trips
 FROM taxi_nhood_full t
 left join zillow_sp zpick
-  on t.pick_regionid = zpick.regionid
+  on t.pick_zgid = zpick.gid
 left join zillow_sp zdrop
-  on t.drop_regionid = zdrop.regionid
+  on t.drop_zgid = zdrop.gid
 left join date_dim d
   on t.pick_date = d.date
 group by
@@ -113,6 +118,7 @@ group by
   ,d.americanholiday
   ,t.payment_type
 ;
+
 
 CREATE VIEW neighborhood_sum AS
 SELECT
@@ -197,31 +203,8 @@ full outer join tow_pick p
   and d.americanholiday = p.americanholiday
 group by
   p.pick_neigh
+  ,p.pick_city
   ,p.dayofweek
   ,p.pick_hour
   ,p.americanholiday
-;
-
--------
-
-select
-  zpick.name as pick_neigh
-  ,case when t.trip_distance < 3 then 'Less than 3 miles'
-    when t.trip_distance < 5 then '3-6 miles'
-    when t.trip_distance < 8 then '6-9 miles'
-    else '9 miles or more' end as dist_bin
-  ,sum(t.tip_amount)/count(t.*) as tip_pct
-FROM taxi_nhood_full t
-left join zillow_sp zpick
-  on t.pick_regionid = zpick.regionid
-where 1=1
-  and zpick.city = 'New York City-Manhattan'
-  and t.payment_type = 'CRD'
-  and t.trip_distance > 0
-group by
-  zpick.name
-  ,case when t.trip_distance < 3 then 'Less than 3 miles'
-    when t.trip_distance < 5 then '3-6 miles'
-    when t.trip_distance < 8 then '6-9 miles'
-    else '9 miles or more' end
 ;

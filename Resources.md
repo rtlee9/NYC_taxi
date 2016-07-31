@@ -9,6 +9,7 @@
 * [Daily 2015 weather, from Wunderground](https://www.wunderground.com/history/airport/KJFK/2014/1/1/CustomHistory.html?dayend=31&monthend=12&yearend=2014&req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1)
 * [Wunderground weather API](https://www.wunderground.com/weather/api)
 * [Holiday dates](https://gist.github.com/shivaas/4758439)
+* [Census blocks](http://www1.nyc.gov/site/planning/data-maps/open-data/districts-download-metadata.page)
 
 
 ## Resources
