@@ -14,3 +14,8 @@
 * Taxi volumes in subway deserts
 * Vacation routes
 * Taxi drivers - maximize dollars / time
+
+## Reasons for longer trips
+* Avoid traffic / construction (use same time of day)
+* Missed turn
+* Bad data (use rounded 4 digit coordinates with many data points)
