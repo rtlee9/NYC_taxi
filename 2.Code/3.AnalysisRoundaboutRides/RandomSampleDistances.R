@@ -7,13 +7,15 @@
 library(RPostgreSQL, quietly = T)
 library(data.table, quietly = T)
 library(scales, quietly = T)
+library(lubridate)
 library(ggmap, quietly = T)
 library(ggthemes, quietly = T)
 library(rCharts, quietly = T)
-library(knitr, quietly = T)
-library(vegan, quietly = T)
 library(pastecs)
+
+# Set paths
 setwd("/Users/Ryan/Github/NYC_taxi/2.Code/3.AnalysisRoundaboutRides/")
+analysisPath <- "../../3.Analysis/"
 
 # Load maps
 map_center <- c(lon = -73.94, lat = 40.75)
@@ -31,21 +33,45 @@ rand_trips <- as.data.table(dbGetQuery(con, query_rand100000))
 hold <- dbDisconnect(con)
 
 # Save full random sample (one time only)
-saveRDS(rand_trips, "../../3.Analysis/rand_trips_full.Rda")
+saveRDS(rand_trips, paste0(analysisPath, "rand_trips_full.Rda"))
+rand_trips <- readRDS(paste0(analysisPath, "rand_trips_full.Rda"))
 
-# Set run number
+# Import and clean data
+result <- tryCatch({
+  filenames <- list.files(pattern= paste0(analysisPath, "rand_trips_mapped_*.Rda"), full.names=TRUE)
+  file.list <- lapply(filenames,readRDS(x))
+  mapped <- rbindlist(file.list)
+  print(paste(nrow(mapped), "records imported"))
+}, error = function(err) {
+  print("No files found")
+  return(NULL)
+}, finally = {
+  print(paste0("Prior iterations: ", i))
+})
 
+if (is.null(result)) {
+  i <- 1
+} else {
+  i <- max(mapped$batchID) + 1
+}
+
+# Select current batch
+batchSize <- 2500
+startN <- batchSize*(i-1)+1
+endN <- batchSize*i
+rand_trips_sample <- rand_trips[startN:endN]
+rand_trips_sample[, batchID:=i]
+rand_trips_sample[, runDT:=today()]
 
 # Get expected distances for random sample
-rand_trips_sample <- rand_trips[1:1000] # TEMP
 rand_trips_sample$from <- paste(rand_trips_sample$pickup_latitude, rand_trips_sample$pickup_longitude)
 rand_trips_sample$to <- paste(rand_trips_sample$dropoff_latitude, rand_trips_sample$dropoff_longitude)
-gdist <- as.data.table(mapdist(from = from, to = to, mode = 'driving', output = 'simple', messaging = F))
+gdist <- as.data.table(mapdist(from = rand_trips_sample$from, to = rand_trips_sample$to, mode = 'driving', output = 'simple', messaging = F))
 distQueryCheck()
 
 # Merge back with trip data and save
 rand_trips_mapped <- cbind(rand_trips_sample, gdist)
-saveRDS(rand_trips_mapped, paste0("rand_trips_mapped_", today(), ".Rda"))
+saveRDS(rand_trips_mapped, paste0(analysisPath, "rand_trips_mapped_", i, ".Rda"))
 
 # Distribution of actual v expected distance
 rand_trips_mapped[, actualExepcted := trip_distance/miles]
