@@ -11,7 +11,6 @@ library(lubridate)
 library(ggmap, quietly = T)
 library(ggthemes, quietly = T)
 library(rCharts, quietly = T)
-library(pastecs)
 
 # Set paths
 setwd("/Users/Ryan/Github/NYC_taxi/2.Code/3.AnalysisRoundaboutRides/")
@@ -38,15 +37,12 @@ rand_trips <- readRDS(paste0(analysisPath, "rand_trips_full.Rda"))
 
 # Import and clean data
 result <- tryCatch({
-  filenames <- list.files(pattern= paste0(analysisPath, "rand_trips_mapped_*.Rda"), full.names=TRUE)
-  file.list <- lapply(filenames,readRDS(x))
+  file.list <- lapply(Sys.glob(paste0(analysisPath, "rand_trips_mapped_*.Rda")),readRDS)
   mapped <- rbindlist(file.list)
   print(paste(nrow(mapped), "records imported"))
 }, error = function(err) {
   print("No files found")
   return(NULL)
-}, finally = {
-  print(paste0("Prior iterations: ", i))
 })
 
 if (is.null(result)) {
@@ -73,8 +69,11 @@ distQueryCheck()
 rand_trips_mapped <- cbind(rand_trips_sample, gdist)
 saveRDS(rand_trips_mapped, paste0(analysisPath, "rand_trips_mapped_", i, ".Rda"))
 
+# Add current batch to previous batches
+mappedCurrent <- rbindlist(list(mapped, rand_trips_mapped))
+
 # Distribution of actual v expected distance
-rand_trips_mapped[, actualExepcted := trip_distance/miles]
-ggplot(rand_trips_mapped[actualExepcted < 3], aes(x=actualExepcted)) + geom_density()
-quantile(rand_trips_mapped[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, .5, .95, .99))
+mappedCurrent[, actualExepcted := trip_distance/miles]
+ggplot(mappedCurrent[actualExepcted < 3], aes(x=actualExepcted)) + geom_density()
+quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, .5, .95, .99))
 
