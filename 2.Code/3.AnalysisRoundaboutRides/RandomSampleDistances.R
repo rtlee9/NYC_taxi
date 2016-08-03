@@ -74,6 +74,11 @@ mappedCurrent <- rbindlist(list(mapped, rand_trips_mapped))
 
 # Distribution of actual v expected distance
 mappedCurrent[, actualExepcted := trip_distance/miles]
-ggplot(mappedCurrent[actualExepcted < 3], aes(x=actualExepcted)) + geom_density()
+ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
 quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, .5, .95, .99))
+
+# Deep dive into top 5% (exclude top 1%)
+
+# Compare against geom_dist -- see if geom_dist compares to actual(with a
+# constant multiplier)
 
