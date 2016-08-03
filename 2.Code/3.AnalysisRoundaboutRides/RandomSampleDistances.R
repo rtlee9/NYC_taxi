@@ -7,7 +7,7 @@
 library(RPostgreSQL, quietly = T)
 library(data.table, quietly = T)
 library(scales, quietly = T)
-library(lubridate)
+library(lubridate, quietly = T)
 library(ggmap, quietly = T)
 library(ggthemes, quietly = T)
 library(rCharts, quietly = T)
@@ -46,9 +46,9 @@ result <- tryCatch({
 })
 
 if (is.null(result)) {
-  i <- 1
+  (i <- 1)
 } else {
-  i <- max(mapped$batchID) + 1
+  (i <- max(mapped$batchID) + 1)
 }
 
 # Select current batch
@@ -60,9 +60,9 @@ rand_trips_sample[, batchID:=i]
 rand_trips_sample[, runDT:=today()]
 
 # Get expected distances for random sample
-rand_trips_sample$from <- paste(rand_trips_sample$pickup_latitude, rand_trips_sample$pickup_longitude)
-rand_trips_sample$to <- paste(rand_trips_sample$dropoff_latitude, rand_trips_sample$dropoff_longitude)
-gdist <- as.data.table(mapdist(from = rand_trips_sample$from, to = rand_trips_sample$to, mode = 'driving', output = 'simple', messaging = F))
+fromIN <- paste(rand_trips_sample$pickup_latitude, rand_trips_sample$pickup_longitude)
+toIN <- paste(rand_trips_sample$dropoff_latitude, rand_trips_sample$dropoff_longitude)
+gdist <- as.data.table(mapdist(from = fromIN, to = toIN, mode = 'driving', output = 'simple', messaging = F))
 distQueryCheck()
 
 # Merge back with trip data and save
