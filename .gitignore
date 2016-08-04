@@ -6,4 +6,5 @@
 *.html
 *.png
 *.gif
-
+1.Data/uber*.csv*
+1.Data/NYPD_Motor_Vehicle_Collisions.csv

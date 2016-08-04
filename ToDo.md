@@ -2,10 +2,12 @@
 
 ## Near term - the long way home
 * Random sample Google distance of all Manhattan trips
+* Compare to Uber -- can't do, no dropoff coordinates provided
 * Same routes - census blocks
 * Random sample within top route
 
 ## Long term
+* Collision [data](https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95/data)
 * Same route, speeds and tips
 * Build volume predictive model
   * Subway closings
