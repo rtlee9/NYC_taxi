@@ -77,6 +77,12 @@ mappedCurrent[, actualExepcted := trip_distance/miles]
 ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
 quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, 0.1, .5, .9, .95, .99))
 
+# Scatter plot of each trip
+ggplot(mappedCurrent, aes(x=miles, y = trip_distance)) + geom_point(size = .05, alpha = .5)
+
+# Interactive scatter (WIP)
+# nPlot(trip_distance ~ miles, data = mappedCurrent, type = 'scatterChart')
+
 # Deep dive into top 5% (exclude top 1%)
 
 # Compare against geom_dist -- see if geom_dist compares to actual(with a
