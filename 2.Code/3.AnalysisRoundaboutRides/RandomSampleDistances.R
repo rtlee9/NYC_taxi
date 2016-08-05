@@ -26,9 +26,9 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
 con = dbConnect(pg, password="", host="localhost", port=5432)
-fileName <- 'query_rand100000.sql'
-query_rand100000 <- readChar(fileName, file.info(fileName)$size)
-rand_trips <- as.data.table(dbGetQuery(con, query_rand100000))
+fileName <- 'query_rand.sql'
+query_rand <- readChar(fileName, file.info(fileName)$size)
+rand_trips <- as.data.table(dbGetQuery(con, query_rand))
 hold <- dbDisconnect(con)
 
 # Save full random sample (one time only)
@@ -39,13 +39,11 @@ rand_trips <- readRDS(paste0(analysisPath, "rand_trips_full.Rda"))
 result <- tryCatch({
   file.list <- lapply(Sys.glob(paste0(analysisPath, "rand_trips_mapped_*.Rda")),readRDS)
   mapped <- rbindlist(file.list)
-  print(paste(nrow(mapped), "records imported"))
 }, error = function(err) {
-  print("No files found")
   return(NULL)
 })
 
-if (is.null(result)) {
+if (is.null(mapped) | nrow(mapped) == 0) {
   (i <- 1)
 } else {
   (i <- max(mapped$batchID) + 1)
