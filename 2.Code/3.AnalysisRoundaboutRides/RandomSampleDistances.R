@@ -3,14 +3,16 @@
 # to Google Maps distance expecation 
 # ****************************************************************************
 
+# *************************************************
 # Setup
-library(RPostgreSQL, quietly = T)
-library(data.table, quietly = T)
-library(scales, quietly = T)
-library(lubridate, quietly = T)
-library(ggmap, quietly = T)
-library(ggthemes, quietly = T)
-library(rCharts, quietly = T)
+# *************************************************
+
+# Load packages
+reqPackages <- c("RPostgreSQL", "data.table", "scales", "lubridate", "ggmap", "ggthemes", "rCharts", "e1071")
+reqDownloads <- !reqPackages %in% rownames(installed.packages())
+if (any(reqDownloads)) install.packages(wants[reqDownloads])
+loadSuccess <- lapply(reqPackages, require, character.only = T)
+if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackages[unlist(loadSuccess) == F]))
 
 # Set paths
 setwd("/Users/Ryan/Github/NYC_taxi/2.Code/3.AnalysisRoundaboutRides/")
@@ -22,6 +24,10 @@ NYC <- get_googlemap(map_center, zoom = 12, size = c(500, 640))
 NYC_bw <- get_googlemap(map_center, zoom = 12, size = c(500, 640), color = "bw")
 NYC_map <- ggmap(NYC, extent = "device")
 NYC_map_bw <- ggmap(NYC_bw, extent = "device")
+
+# *************************************************
+# Data & queries
+# *************************************************
 
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
