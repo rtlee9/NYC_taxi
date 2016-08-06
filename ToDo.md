@@ -1,10 +1,10 @@
 # To Do
 
 ## Near term - the long way home
-* Random sample Google distance of all Manhattan trips
-* Compare to Uber -- can't do, no dropoff coordinates provided
-* Same routes - census blocks
-* Random sample within top route
+* [ ] Reproducible code
+  * [ ] Set seed for random sample
+  * [ ] Shell scripts for taxi data upload
+* [x] Random sample Google distance of all Manhattan trips
 
 ## Long term
 * Collision [data](https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95/data)
