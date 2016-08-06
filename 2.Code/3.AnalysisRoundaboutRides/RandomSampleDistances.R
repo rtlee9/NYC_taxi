@@ -76,10 +76,20 @@ saveRDS(rand_trips_mapped, paste0(analysisPath, "rand_trips_mapped_", i, ".Rda")
 # Add current batch to previous batches
 mappedCurrent <- rbindlist(list(mapped, rand_trips_mapped))
 
+# *************************************************
 # Distribution of actual v expected distance
+# *************************************************
+
+# Key metrics
 mappedCurrent[, actualExepcted := trip_distance/miles]
-ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
+mappedCurrent[, degOff := atan(actualExepcted)*180/pi]
+skewness(mappedCurrent$degOff, na.rm = T)
+kurtosis(mappedCurrent$degOff, na.rm = T)
+
+# Plot distribution
 quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, 0.1, .5, .9, .95, .99))
+# ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
+ggplot(mappedCurrent, aes(x=degOff)) + geom_density()
 
 # Scatter plot of each trip
 ggplot(mappedCurrent, aes(x=miles, y = trip_distance)) + geom_point(size = .05, alpha = .5)
