@@ -83,6 +83,8 @@ mappedCurrent <- rbindlist(list(mapped, rand_trips_mapped))
 # Key metrics
 mappedCurrent[, actualExepcted := trip_distance/miles]
 mappedCurrent[, degOff := atan(actualExepcted)*180/pi]
+mean(mappedCurrent$degOff, na.rm = T)
+median(mappedCurrent$degOff, na.rm = T)
 skewness(mappedCurrent$degOff, na.rm = T)
 kurtosis(mappedCurrent$degOff, na.rm = T)
 
