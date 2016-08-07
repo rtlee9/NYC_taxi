@@ -1,3 +1,5 @@
+select setseed(.1411555);
+
 select
   t.*
   ,pick.name as pick_neigh
