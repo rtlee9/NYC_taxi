@@ -8,9 +8,9 @@
 # *************************************************
 
 # Load packages
-reqPackages <- c("RPostgreSQL", "data.table", "scales", "lubridate", "ggmap", "ggthemes", "rCharts", "e1071")
+reqPackages <- c("RPostgreSQL", "data.table", "scales", "lubridate", "ggmap", "ggthemes", "rCharts", "e1071", "caret")
 reqDownloads <- !reqPackages %in% rownames(installed.packages())
-if (any(reqDownloads)) install.packages(wants[reqDownloads])
+if (any(reqDownloads)) install.packages(wants[reqDownloads], dependencies = T)
 loadSuccess <- lapply(reqPackages, require, character.only = T)
 if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackages[unlist(loadSuccess) == F]))
 
@@ -32,6 +32,8 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
 con = dbConnect(pg, password="", host="localhost", port=5432)
+fileName <- 'setSeed.sql'
+dbSendQuery(con, readChar(fileName, file.info(fileName)$size))
 fileName <- 'query_rand.sql'
 query_rand <- readChar(fileName, file.info(fileName)$size)
 rand_trips <- as.data.table(dbGetQuery(con, query_rand))
@@ -88,6 +90,10 @@ median(mappedCurrent$degOff, na.rm = T)
 skewness(mappedCurrent$degOff, na.rm = T)
 kurtosis(mappedCurrent$degOff, na.rm = T)
 
+# Test for normality
+shapiro.test(mappedCurrent$degOff)
+qqnorm(mappedCurrent$degOff)
+
 # Plot distribution
 quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, 0.1, .5, .9, .95, .99))
 # ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
@@ -96,12 +102,42 @@ ggplot(mappedCurrent, aes(x=degOff)) + geom_density()
 # Scatter plot of each trip
 ggplot(mappedCurrent, aes(x=miles, y = trip_distance)) + geom_point(size = .05, alpha = .5)
 
-# Interactive scatter (WIP)
-# nPlot(trip_distance ~ miles, data = mappedCurrent, type = 'scatterChart')
-
 # Deep dive into top 5% (exclude top 1%)
 
 # Compare against geom_dist -- see if geom_dist compares to actual(with a
 # constant multiplier)
 
-# Compare against uber drivers
+# *************************************************
+# Distribution of actual v expected distance
+# *************************************************
+
+(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(passenger_count)][order(passenger_count)])
+(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(tow)][order(tow)])
+(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(partyInd)][order(partyInd)])
+#ggplot(data = sum, aes(x = passenger_count, y = meanDegOff)) + geom_bar(stat = "identity") + scale_y_continuous(limits = c(0, 45))
+
+# *************************************************
+# Time of week comparison
+# *************************************************
+
+# Calculate time of week
+mappedCurrent[,tow := ifelse(
+  weekend == 'Weekday', ifelse(
+    pick_hour <= 10, "Weekday morning", ifelse(
+      pick_hour <= 15, "Weekday midday", "Weekday evening")), "Weekend")]
+mappedCurrent[, partyInd := dayofweek %in% c(1, 7) & pick_hour < 5]
+
+# Compare samples
+t.test(mappedCurrent[partyInd == T]$degOff, mappedCurrent[partyInd == F]$degOff, alternative = "greater")
+
+
+# *************************************************
+# Model
+# *************************************************
+train <- mappedCurrent[!is.na(degOff), .(degOff, tow, partyInd, pick_neigh, drop_neigh, passenger_count, weekend, americanholiday, weekdayname, pick_hour)]
+
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+set.seed(545177)
+model <- train(degOff ~., data = train, method = "xgbTree", trControl = control)
+
+(imp <- varImp(model))
