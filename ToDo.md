@@ -5,7 +5,8 @@
   * [x] Set seed for random sample
   * [ ] Shell scripts for taxi data upload
 * [x] Random sample Google distance of all Manhattan trips
-  * [ ] Regression / model for ratio (include num passengers, tow)
+  * [x] Regression / machine learning model for long haul ratio
+  * [ ] Add LGA pickup, dropoff as a factor
 
 ## Long term
 * Collision [data](https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95/data)

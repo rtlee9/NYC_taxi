@@ -83,8 +83,9 @@ mappedCurrent <- rbindlist(list(mapped, rand_trips_mapped))
 # *************************************************
 
 # Key metrics
-mappedCurrent[, actualExepcted := trip_distance/miles]
-mappedCurrent[, degOff := atan(actualExepcted)*180/pi]
+mappedCurrent[, actualExpected := trip_distance/miles]
+mappedCurrent[, degOff := atan(actualExpected)*180/pi]
+mappedCurrent[, longHaul := actualExpected > 1.1 & actualExpected < 1.6]
 mean(mappedCurrent$degOff, na.rm = T)
 median(mappedCurrent$degOff, na.rm = T)
 skewness(mappedCurrent$degOff, na.rm = T)
@@ -95,8 +96,8 @@ shapiro.test(mappedCurrent$degOff)
 qqnorm(mappedCurrent$degOff)
 
 # Plot distribution
-quantile(mappedCurrent[!is.na(actualExepcted)]$actualExepcted, c(.01, .05, 0.1, .5, .9, .95, .99))
-# ggplot(mappedCurrent[actualExepcted < 2], aes(x=actualExepcted)) + geom_density()
+quantile(mappedCurrent[!is.na(actualExpected)]$actualExpected, c(.01, .05, 0.1, .5, .9, .95, .99))
+# ggplot(mappedCurrent[actualExpected < 2], aes(x=actualExpected)) + geom_density()
 ggplot(mappedCurrent, aes(x=degOff)) + geom_density()
 
 # Scatter plot of each trip
@@ -111,10 +112,14 @@ ggplot(mappedCurrent, aes(x=miles, y = trip_distance)) + geom_point(size = .05, 
 # Distribution of actual v expected distance
 # *************************************************
 
-(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(passenger_count)][order(passenger_count)])
-(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(tow)][order(tow)])
-(sum <- mappedCurrent[, .(count = .N, meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(partyInd)][order(partyInd)])
-#ggplot(data = sum, aes(x = passenger_count, y = meanDegOff)) + geom_bar(stat = "identity") + scale_y_continuous(limits = c(0, 45))
+# Higher ratio for multiple passengers - could be due to multiple dropoffs for a single trip
+mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(passenger_count)][order(passenger_count)]
+
+mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(tow)][order(tow)]
+mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(partyInd)][order(partyInd)]
+
+(sum <- mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(pick_hour)][order(pick_hour)])
+ggplot(data = sum, aes(x = pick_hour, y = pctLongHaul)) + geom_bar(stat = "identity")
 
 # *************************************************
 # Time of week comparison
@@ -129,15 +134,15 @@ mappedCurrent[, partyInd := dayofweek %in% c(1, 7) & pick_hour < 5]
 
 # Compare samples
 t.test(mappedCurrent[partyInd == T]$degOff, mappedCurrent[partyInd == F]$degOff, alternative = "greater")
-
+t.test(mappedCurrent[partyInd == T]$longHaul, mappedCurrent[partyInd == F]$longHaul, alternative = "greater")
 
 # *************************************************
 # Model
 # *************************************************
-train <- mappedCurrent[!is.na(degOff), .(degOff, tow, partyInd, pick_neigh, drop_neigh, passenger_count, weekend, americanholiday, weekdayname, pick_hour)]
 
+train <- mappedCurrent[!is.na(longHaul), .(longHaul = as.factor(longHaul), tow, partyInd, pick_neigh, drop_neigh, passenger_count, weekend, americanholiday, weekdayname, pick_hour)]
 control <- trainControl(method="repeatedcv", number=10, repeats=3)
 set.seed(545177)
-model <- train(degOff ~., data = train, method = "xgbTree", trControl = control)
-
+model <- train(longHaul ~., data = train, method = "xgbTree", trControl = control)
 (imp <- varImp(model))
+confusionMatrix(model)
