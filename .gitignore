@@ -8,4 +8,6 @@
 *.gif
 1.Data/uber*.csv*
 1.Data/NYPD_Motor_Vehicle_Collisions.csv
+1.Data/nyc_taxi_data.csv
+1.Data/yellow_tripdata_2015-01-06.csv
 */Archive/

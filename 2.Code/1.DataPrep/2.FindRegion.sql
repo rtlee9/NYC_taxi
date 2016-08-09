@@ -1,21 +1,4 @@
 /********************************************************************
-  Add keys and indecies
-********************************************************************/
-ALTER TABLE nyc_taxi_yellow_14 ADD COLUMN id BIGSERIAL PRIMARY KEY;
-
-CREATE INDEX index_nycb_on_geom ON nycb2010 USING gist (geom);
-CREATE INDEX index_nycb_gid ON nycb2010 (gid);
-VACUUM ANALYZE nycb2010;
-
-CREATE INDEX index_on_geom ON zillow_4326 USING gist (geom);
-CREATE INDEX index_gid ON zillow_4326 (gid);
-VACUUM ANALYZE zillow_4326;
-
-CREATE INDEX index_geom ON zillow_sp USING gist (geom);
-CREATE INDEX index_sp_gid ON zillow_sp (gid);
-VACUUM ANALYZE zillow_sp;
-
-/********************************************************************
   Map points to geographic areas
 ********************************************************************/
 
@@ -30,16 +13,14 @@ from public.nyc_taxi_yellow_14
 CREATE TABLE temp_nyc_geo AS
 SELECT
   t1.id
-  ,spick.gid as pick_gid_old
-  ,sdrop.gid as drop_gid_old
   ,zpick.gid as pick_zgid
   ,zdrop.gid as drop_zgid
   ,bpick.gid as pick_bgid
   ,bdrop.gid as drop_bgid
 FROM temp_taxi_full t1
-LEFT JOIN zillow_4326 zdrop
+LEFT JOIN zillow_sp zdrop
   on ST_Within(t1.dropoff4326, zdrop.geom)
-LEFT JOIN zillow_4326 zpick
+LEFT JOIN zillow_sp zpick
   on ST_Within(t1.pickup4326, zpick.geom)
 LEFT JOIN public.nycb2010 bdrop
   on ST_Within(t1.dropoff4326, bdrop.geom)
