@@ -3,7 +3,7 @@
 ## Near term - the long way home
 * [ ] Reproducible code
   * [x] Set seed for random sample
-  * [ ] Shell scripts for taxi data upload
+  * [x] Shell scripts for taxi data upload
 * [x] Random sample Google distance of all Manhattan trips
   * [x] Regression / machine learning model for long haul ratio
   * [ ] Add LGA pickup, dropoff as a factor
