@@ -28,8 +28,6 @@ LEFT JOIN public.nycb2010 bpick
   on ST_Within(t1.pickup4326, bpick.geom)
 ;
 
-DROP TABLE temp_taxi_full;
-
 CREATE TABLE taxi_nhood_full as
 SELECT
   t.*
@@ -38,10 +36,10 @@ SELECT
   ,extract(epoch from (t.dropoff_datetime::timestamp - t.pickup_datetime::timestamp)) as elapsed
   ,g.pick_zgid
   ,g.drop_zgid
-  ,g.pick_gid_old
-  ,g.drop_gid_old
   ,g.pick_bgid
   ,g.drop_bgid
+  ,c.dropoff4326
+  ,c.pickup4326
   ,ST_Distance(c.dropoff4326::geography, c.pickup4326::geography) as geom_distance
 from temp_nyc_geo g
 right join nyc_taxi_yellow_14 t
@@ -50,6 +48,7 @@ left join temp_taxi_full c
   on t.id = c.id
 ;
 
+DROP TABLE temp_taxi_full;
 DROP TABLE temp_nyc_geo;
 
 CREATE INDEX idx_pick_bgid ON taxi_nhood_full (pick_bgid);
