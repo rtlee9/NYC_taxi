@@ -24,12 +24,10 @@ con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", por
 dataPath <- "../../1.Data/"
 
 # Taxi data
-dataPath <- "/Volumes/HDD/NYC_taxi/" ### TEMP - REMOVE THIS
 dbWriteTable(con,'nyc_taxi_yellow_14', fread(paste0(dataPath, "nyc_taxi_data.csv")), row.names=FALSE)
 dbWriteTable(con,'nyc_taxi_yellow_15_1', fread(paste0(dataPath, "yellow_tripdata_2015-01-06.csv")), row.names=FALSE)
 dbSendQuery(con, "ALTER TABLE nyc_taxi_yellow_14 ADD COLUMN id BIGSERIAL PRIMARY KEY;")
 dbSendQuery(con, "ALTER TABLE nyc_taxi_yellow_15_1 ADD COLUMN id BIGSERIAL PRIMARY KEY;")
-dataPath <- "../../1.Data/"
 
 # Weather data: 2014
 weather <- fread(paste0(dataPath, "weather_2014.csv"))
