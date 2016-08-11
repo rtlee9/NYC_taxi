@@ -1,12 +1,12 @@
-# **************************************************************************** 
+# ****************************************************************************
 # Upload taxi data and other dimensional data to default PostgreSQL schema
-# 
+#
 # Inputs (see Resources.md for data sources)
 # 1. 2014 taxi data: nyc_taxi_data.csv
 # 2. 2015 taxi data: yellow_tripdata_2015-01-06.csv
 # 3. 2014 weather data: weather_2014.csv
 # 4. List of bank holidays: US bank holidays.csv
-# 
+#
 # Outputs (PostgreSQL default schema)
 # 1. nyc_taxi_yellow_14
 # 2. nyc_taxi_yellow_15_1
@@ -14,14 +14,19 @@
 # 4. holidays
 # 5. price_index
 # 6. econ_index
-# **************************************************************************** 
+# ****************************************************************************
 
-# Install packages and other setup
-library(RPostgreSQL)
-library(quantmod)
+# Load packages
+reqPackages <- c("RPostgreSQL", "quantmod", "data.table", "lubridate")
+reqDownloads <- !reqPackages %in% rownames(installed.packages())
+if (any(reqDownloads)) install.packages(reqPackages[reqDownloads], dependencies = T, repos = "http://cran.us.r-project.org")
+loadSuccess <- lapply(reqPackages, require, character.only = T)
+if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackages[unlist(loadSuccess) == F]))
+
+# Other setup
 pg = dbDriver("PostgreSQL")
 con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", port=5432)
-dataPath <- "../../1.Data/"
+dataPath <- "1.Data/"
 
 # Taxi data
 dbWriteTable(con,'nyc_taxi_yellow_14', fread(paste0(dataPath, "nyc_taxi_data.csv")), row.names=FALSE)
