@@ -5,9 +5,15 @@
 CREATE TABLE temp_taxi_full AS
 select
   id
-  , ST_SetSRID(ST_MakePoint(pickup_longitude, pickup_latitude), 4326) as pickup4326
-  , ST_SetSRID(ST_MakePoint(dropoff_longitude, dropoff_latitude), 4326) as dropoff4326
-from public.nyc_taxi_yellow_14
+  ,CASE
+    WHEN pickup_longitude != 0 AND pickup_latitude != 0
+    THEN ST_SetSRID(ST_MakePoint(pickup_longitude, pickup_latitude), 4326)
+  END as pickup
+  ,CASE
+    WHEN dropoff_longitude != 0 AND dropoff_latitude != 0
+    THEN ST_SetSRID(ST_MakePoint(dropoff_longitude, dropoff_latitude), 4326)
+  END as dropoff
+from nyc_taxi_yellow_14
 ;
 
 CREATE TABLE temp_nyc_geo AS
@@ -19,13 +25,13 @@ SELECT
   ,bdrop.gid as drop_bgid
 FROM temp_taxi_full t1
 LEFT JOIN zillow_sp zdrop
-  on ST_Within(t1.dropoff4326, zdrop.geom)
+  on ST_Within(t1.dropoff, zdrop.geom)
 LEFT JOIN zillow_sp zpick
-  on ST_Within(t1.pickup4326, zpick.geom)
-LEFT JOIN public.nycb2010 bdrop
-  on ST_Within(t1.dropoff4326, bdrop.geom)
-LEFT JOIN public.nycb2010 bpick
-  on ST_Within(t1.pickup4326, bpick.geom)
+  on ST_Within(t1.pickup, zpick.geom)
+LEFT JOIN nycb2010 bdrop
+  on ST_Within(t1.dropoff, bdrop.geom)
+LEFT JOIN nycb2010 bpick
+  on ST_Within(t1.pickup, bpick.geom)
 ;
 
 CREATE TABLE taxi_nhood_full as
@@ -38,9 +44,9 @@ SELECT
   ,g.drop_zgid
   ,g.pick_bgid
   ,g.drop_bgid
-  ,c.dropoff4326
-  ,c.pickup4326
-  ,ST_Distance(c.dropoff4326::geography, c.pickup4326::geography) as geom_distance
+  ,c.dropoff
+  ,c.pickup
+  ,ST_Distance(c.dropoff::geography, c.pickup::geography) as geom_distance
 from temp_nyc_geo g
 right join nyc_taxi_yellow_14 t
   on g.id = t.id
