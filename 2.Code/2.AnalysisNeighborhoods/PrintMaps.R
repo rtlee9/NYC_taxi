@@ -2,20 +2,16 @@
 # Genrate trip dot plots by pickup neighborhood
 # ****************************************************************************
 
-# Setup
-library(RPostgreSQL, quietly = T)
-library(data.table, quietly = T)
-library(scales, quietly = T)
-library(ggmap, quietly = T)
-library(ggthemes, quietly = T)
-library(rCharts, quietly = T)
-library(knitr, quietly = T)
-library(vegan, quietly = T)
-setwd("/Users/Ryan/Github/NYC_taxi/3.Analysis/")
+# Load packages
+reqPackages <- c("RPostgreSQL", "data.table", "ggmap", "ggthemes")
+reqDownloads <- !reqPackages %in% rownames(installed.packages())
+if (any(reqDownloads)) install.packages(wants[reqDownloads], dependencies = T)
+loadSuccess <- lapply(reqPackages, require, character.only = T)
+if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackages[unlist(loadSuccess) == F]))
 
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
-con = dbConnect(pg, password="", host="localhost", port=5432)
+con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", port=5432)
 pick_by_pick_neigh<- as.data.table(dbReadTable(con, "pick_by_pick_neigh"))
 drop_by_pick_neigh <- as.data.table(dbReadTable(con, "drop_by_pick_neigh"))
 manhattan_nhoods <- as.data.table(dbGetQuery(con, "select name from zillow_sp where city = 'New York City-Manhattan'"))
@@ -40,7 +36,7 @@ plot_neigh <- function(pick_by_pick_neigh, drop_by_pick_neigh, neigh, alpha_rang
   
   if (plot_method == "print"){return(gg)}
   if (plot_method == "save") {
-    ggsave(filename = paste0("Pick_neigh_", neigh, '.png'), plot = gg, path = '/Users/Ryan/Github/NYC_taxi/5.Plots', dpi = 150, height = h, width = w, units = 'in')
+    ggsave(filename = paste0("Pick_neigh_", neigh, '.png'), plot = gg, path = './5.Plots', dpi = 150, height = h, width = w, units = 'in')
   }
 }
 
