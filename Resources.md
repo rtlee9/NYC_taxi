@@ -22,3 +22,7 @@
 * [Google maps routing](https://rpubs.com/nickbearman/r-google-map-making)
 * [Wunderground weather API](https://www.wunderground.com/weather/api)
 * [Original taxi data](http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml)
+
+## Long way home
+* [GPS tracking](http://arstechnica.com/tech-policy/2014/05/gps-human-tracking-flourishes-as-nyc-cabbies-fight-back/)
+* [Tables with GPS for fares](http://www.theverge.com/2015/10/16/9554035/nyc-taxis-will-text-gps-meters)
