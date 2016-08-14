@@ -31,7 +31,7 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
-con = dbConnect(pg, password="", host="localhost", port=5432)
+con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", port=5432)
 fileName <- 'setSeed.sql'
 dbSendQuery(con, readChar(fileName, file.info(fileName)$size))
 fileName <- 'query_rand.sql'
