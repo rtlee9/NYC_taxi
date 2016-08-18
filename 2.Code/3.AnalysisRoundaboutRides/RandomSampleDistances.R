@@ -10,7 +10,7 @@
 # Load packages
 reqPackages <- c("RPostgreSQL", "data.table", "scales", "lubridate", "ggmap", "ggthemes", "rCharts", "e1071", "caret")
 reqDownloads <- !reqPackages %in% rownames(installed.packages())
-if (any(reqDownloads)) install.packages(wants[reqDownloads], dependencies = T)
+if (any(reqDownloads)) install.packages(reqPackages[reqDownloads], dependencies = T)
 loadSuccess <- lapply(reqPackages, require, character.only = T)
 if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackages[unlist(loadSuccess) == F]))
 
@@ -31,7 +31,7 @@ NYC_map_bw <- ggmap(NYC_bw, extent = "device")
 
 # Query data from PSQL server
 pg = dbDriver("PostgreSQL")
-con = dbConnect(pg, password="", host="localhost", port=5432)
+con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", port=5432)
 fileName <- 'setSeed.sql'
 dbSendQuery(con, readChar(fileName, file.info(fileName)$size))
 fileName <- 'query_rand.sql'
@@ -91,6 +91,13 @@ median(mappedCurrent$degOff, na.rm = T)
 skewness(mappedCurrent$degOff, na.rm = T)
 kurtosis(mappedCurrent$degOff, na.rm = T)
 
+# Calculate time of week
+mappedCurrent[,tow := ifelse(
+  weekend == 'Weekday', ifelse(
+    pick_hour <= 10, "Weekday morning", ifelse(
+      pick_hour <= 15, "Weekday midday", "Weekday evening")), "Weekend")]
+mappedCurrent[, partyInd := dayofweek %in% c(1, 7) & pick_hour < 5]
+
 # Test for normality
 shapiro.test(mappedCurrent$degOff)
 qqnorm(mappedCurrent$degOff)
@@ -115,26 +122,16 @@ ggplot(mappedCurrent, aes(x=miles, y = trip_distance)) + geom_point(size = .05, 
 # Higher ratio for multiple passengers - could be due to multiple dropoffs for a single trip
 mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(passenger_count)][order(passenger_count)]
 
-mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(tow)][order(tow)]
-mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(partyInd)][order(partyInd)]
+mappedCurrent[, .(count = .N, avgPass = mean(passenger_count), pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(tow)][order(tow)]
+mappedCurrent[, .(count = .N, avgPass = mean(passenger_count), pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(partyInd)][order(partyInd)]
 
 (sum <- mappedCurrent[, .(count = .N, pctLongHaul = mean(longHaul, na.rm = T), meanDegOff = mean(degOff, na.rm = T), medDegOff = median(degOff, na.rm = T)), .(pick_hour)][order(pick_hour)])
 ggplot(data = sum, aes(x = pick_hour, y = pctLongHaul)) + geom_bar(stat = "identity")
 
-# *************************************************
-# Time of week comparison
-# *************************************************
-
-# Calculate time of week
-mappedCurrent[,tow := ifelse(
-  weekend == 'Weekday', ifelse(
-    pick_hour <= 10, "Weekday morning", ifelse(
-      pick_hour <= 15, "Weekday midday", "Weekday evening")), "Weekend")]
-mappedCurrent[, partyInd := dayofweek %in% c(1, 7) & pick_hour < 5]
-
-# Compare samples
-t.test(mappedCurrent[partyInd == T]$degOff, mappedCurrent[partyInd == F]$degOff, alternative = "greater")
-t.test(mappedCurrent[partyInd == T]$longHaul, mappedCurrent[partyInd == F]$longHaul, alternative = "greater")
+# T test for difference in means
+t.test(mappedCurrent[partyInd == T]$degOff, mappedCurrent[partyInd == F]$degOff)
+t.test(mappedCurrent[partyInd == T]$longHaul, mappedCurrent[partyInd == F]$longHaul)
+t.test(mappedCurrent[partyInd == T & passenger_count == 1]$longHaul, mappedCurrent[partyInd == F & passenger_count == 1]$longHaul)
 
 # *************************************************
 # Model
