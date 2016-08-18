@@ -32,54 +32,6 @@ group by
   ,z.name
 ;
 
--- Census blocks base summary
-CREATE MATERIALIZED VIEW tow_ctb_sum AS
-SELECT
-  zpick.bctcb2010 as pick_bctcb
-  ,zpick.ct2010 as pick_ct
-  ,zpick.boroname as pick_borough
-  ,zdrop.bctcb2010 as drop_bctcb
-  ,zdrop.ct2010 as drop_ct
-  ,zdrop.boroname as drop_borough
-  ,sum(t.fare_amount) as fare
-  ,sum(t.tip_amount) as tip
-  ,sum(t.passenger_count) as passengers
-  ,sum(t.trip_distance) as distance
-  ,sum(t.elapsed) as elapsed
-  ,count(*) as trips
-FROM taxi_nhood_full t
-left join public.nycb2010 zpick
-  on t.pick_bgid = zpick.gid
-left join public.nycb2010 zdrop
-  on t.drop_bgid = zdrop.gid
-left join date_dim d
-  on t.pick_date = d.date
-group by
-  zpick.bctcb2010
-  ,zpick.ct2010
-  ,zpick.boroname
-  ,zdrop.bctcb2010
-  ,zdrop.ct2010
-  ,zdrop.boroname
-;
-
-CREATE MATERIALIZED VIEW top10routes_full as
-select t.*, zpick.bctcb2010 as pick_bctcb, zdrop.bctcb2010 as drop_bctcb, s.rank
-from taxi_nhood_full t
-left join public.nycb2010 zpick
-  on t.pick_bgid = zpick.gid
-left join public.nycb2010 zdrop
-  on t.drop_bgid = zdrop.gid
-inner join (
-  select pick_bctcb, drop_bctcb, trips, row_number() over() as rank
-  from tow_ctb_sum
-  where pick_borough = 'Manhattan' and drop_borough = 'Manhattan'
-    and pick_bctcb <> drop_bctcb
-  order by trips desc limit 10
-) s
-  on zpick.bctcb2010 = s.pick_bctcb and zdrop.bctcb2010 = s.drop_bctcb
-;
-
 -- Neighborhood base summary
 CREATE MATERIALIZED VIEW tow_nhood_sum AS
 SELECT
