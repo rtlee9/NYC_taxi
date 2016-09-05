@@ -2,8 +2,9 @@
 # Create random sample of taxi data for Google Maps API queries
 # ****************************************************************************
 
-# Scalars
+# Setupd
 sample_size <- 10000
+set.seed(7298)
 
 # Load packages
 reqPackages <- c("RPostgreSQL", "quantmod", "data.table", "lubridate")
@@ -19,4 +20,4 @@ analysis_path <- "3.Analysis/"
 # Taxi data
 taxi_14 <- fread(paste0(data_path, "nyc_taxi_data.csv"))
 sample <- taxi_14[sample(.N, sample_size)]
-saveRDS(sample, paste0(data_path, "taxi_14_sample_", sample_size, ".Rda"))
+saveRDS(sample, paste0(analysis_path, "taxi_14_sample_", sample_size, ".Rda"))
