@@ -12,3 +12,4 @@
 1.Data/yellow_tripdata_2015-01-06.csv
 */Archive/
 *.swp
+*.DS_store

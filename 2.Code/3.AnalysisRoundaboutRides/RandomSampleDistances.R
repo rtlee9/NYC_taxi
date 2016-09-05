@@ -8,7 +8,7 @@
 # *************************************************
 
 # Load packages
-reqPackages <- c("RPostgreSQL", "data.table", "scales", "lubridate", "ggmap", "ggthemes", "rCharts", "e1071", "caret")
+reqPackages <- c("data.table", "scales", "lubridate", "ggmap")
 reqDownloads <- !reqPackages %in% rownames(installed.packages())
 if (any(reqDownloads)) install.packages(reqPackages[reqDownloads], dependencies = T)
 loadSuccess <- lapply(reqPackages, require, character.only = T)
@@ -16,32 +16,16 @@ if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackage
 
 # Set paths
 setwd("/Users/Ryan/Github/NYC_taxi/2.Code/3.AnalysisRoundaboutRides/")
-analysisPath <- "../../3.Analysis/"
+analysis_path <- "3.Analysis/"
+data_path <- "1.Data/"
 
-# Load maps
-map_center <- c(lon = -73.94, lat = 40.75)
-NYC <- get_googlemap(map_center, zoom = 12, size = c(500, 640))
-NYC_bw <- get_googlemap(map_center, zoom = 12, size = c(500, 640), color = "bw")
-NYC_map <- ggmap(NYC, extent = "device")
-NYC_map_bw <- ggmap(NYC_bw, extent = "device")
+# Import batch
+sample_size <- 10000
+batch <- readRDS(paste0(analysis_path, "taxi_14_sample_", sample_size, ".Rda"))
 
 # *************************************************
 # Data & queries
 # *************************************************
-
-# Query data from PSQL server
-pg = dbDriver("PostgreSQL")
-con = dbConnect(pg, dbname = "nyc-taxi-data", password="", host="localhost", port=5432)
-fileName <- 'setSeed.sql'
-dbSendQuery(con, readChar(fileName, file.info(fileName)$size))
-fileName <- 'query_rand.sql'
-query_rand <- readChar(fileName, file.info(fileName)$size)
-rand_trips <- as.data.table(dbGetQuery(con, query_rand))
-hold <- dbDisconnect(con)
-
-# Save full random sample (one time only)
-saveRDS(rand_trips, paste0(analysisPath, "rand_trips_full.Rda"))
-rand_trips <- readRDS(paste0(analysisPath, "rand_trips_full.Rda"))
 
 # Import and clean data
 result <- tryCatch({
@@ -61,7 +45,7 @@ if (is.null(mapped) | nrow(mapped) == 0) {
 batchSize <- 2500
 startN <- batchSize*(i-1)+1
 endN <- batchSize*i
-rand_trips_sample <- rand_trips[startN:endN]
+rand_trips_sample <- batch[startN:endN]
 rand_trips_sample[, batchID:=i]
 rand_trips_sample[, runDT:=today()]
 
