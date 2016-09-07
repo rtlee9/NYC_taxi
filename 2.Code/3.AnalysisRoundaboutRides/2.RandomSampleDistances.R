@@ -41,9 +41,9 @@ run_maps_query <- function() {
   })
 
   if (is.null(mapped) || nrow(mapped) == 0) {
-    (i <- 1)
+    i <- 1
   } else {
-    (i <- max(mapped$batchID) + 1)
+    i <- max(mapped$batchID) + 1
   }
 
   # Select current batch
@@ -62,8 +62,10 @@ run_maps_query <- function() {
   # Merge back with trip data and save
   rand_trips_mapped <- cbind(rand_trips_sample, gdist)
   saveRDS(rand_trips_mapped, paste0(analysis_path, "rand_trips_mapped_", i, ".Rda"))
+  return(i)
 }
 
 if (distQueryCheck() == 2500) {
-  run_maps_query()
+  i <- run_maps_query()
+  print(paste0('Successfully ran batch ', i))
 }
