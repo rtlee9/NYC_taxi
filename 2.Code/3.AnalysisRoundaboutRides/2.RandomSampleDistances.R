@@ -17,7 +17,7 @@ if (any(!unlist(loadSuccess))) stop(paste("\n\tPackage load failed:", reqPackage
 run_maps_query <- function() {
 
   if (distQueryCheck() != 2500) {
-	  return(NULL)
+    return(NULL)
   }
 
   # Set paths
@@ -35,7 +35,7 @@ run_maps_query <- function() {
   # Import and clean data
   mapped <- tryCatch({
     file.list <- lapply(Sys.glob(paste0(analysis_path, "rand_trips_mapped_*.Rda")),readRDS)
-    return(rbindlist(file.list))
+    rbindlist(file.list)
   }, error = function(err) {
     return(NULL)
   })
